@@ -2,13 +2,13 @@
 # 坐标: arm_base_link 系, x 向前(米), z 向上(米), 桌面 z≈0, 无 yaw
 grasp_controller_real:
   ros__parameters:
-    A_x: 0.20            # A 点 x(臂正前方桌面上)
-    B_x: 0.27            # B 点 x
+    A_x: 0.16            # A 点 x(臂正前方桌面上; 受臂扭矩限制收紧, 满电可回 0.20)
+    B_x: 0.14            # B 点 x(比 A 近: 带载搬运向内收, 扭矩递减)
     z_grasp: 0.02        # 夹取高度(目标物 3cm 高)
-    z_safe: 0.10         # 安全/搬运高度
+    z_safe: 0.08         # 安全/搬运高度(压低减少带载力矩)
     gripper_power: 0.5   # 夹爪功率 [0,1]
     max_step_m: 0.03     # 插值子航点最大步长(move_arm 限速)
-    x_range: [0.05, 0.32]  # 工作空间 x 范围(超出拒绝执行)
+    x_range: [0.05, 0.20]  # 工作空间 x 范围(超出拒绝执行; 按实测包线收紧)
     z_range: [0.0, 0.20]   # 工作空间 z 范围
     rm_ns: 'robomaster'    # robomaster_ros 驱动节点命名空间
     log_dir: '~/grasp_logs'  # CSV 日志目录(航点/轨迹/每轮结果)

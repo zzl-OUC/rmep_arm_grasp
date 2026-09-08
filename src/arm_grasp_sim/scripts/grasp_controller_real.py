@@ -29,7 +29,7 @@ from std_msgs.msg import String
 MOVE_TIMEOUT = 5.0     # move_arm 驱动侧硬超时(s)
 GRIP_TIMEOUT = 7.0     # gripper 驱动侧超时(s)
 SEND_TIMEOUT = 3.0     # goal 发送/接受等待(s)
-HOME_X = 0.12          # HOME 安全位姿 x(回收位, 运行时夹在 x_range 内; 收紧包线内)
+HOME_X = 0.15          # HOME 安全位姿 x(回收位, 运行时夹在 x_range 内)
 
 S_HOME = 'HOME'
 S_APPROACH_A = 'APPROACH_A'

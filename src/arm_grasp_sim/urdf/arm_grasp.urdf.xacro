@@ -28,6 +28,7 @@ RoboMaster EP 工程机器人（底盘+机械臂+机械爪）抓取仿真模型
   <material name="dark_plastic"><color rgba="0.0281746 0.0281746 0.0281746 1.0"/></material>
   <material name="metal"><color rgba="0.0281746 0.028 0.0281746 1.0"/></material>
   <material name="EP_up.001"><color rgba="0.0284811 0.0284811 0.0284811 1.0"/></material>
+  <material name="wheel_plastic"><color rgba="0.2739087 0.2739087 0.2739087 1.0"/></material>
 
   <!-- ================= 世界与桌面 ================= -->
   <link name="world"/>
@@ -85,6 +86,73 @@ RoboMaster EP 工程机器人（底盘+机械臂+机械爪）抓取仿真模型
     <origin xyz="0 0 0.03465" rpy="0 0 0"/>
     <parent link="base_link"/><child link="chassis_base_link"/>
   </joint>
+
+
+  <!-- ================= 麦轮（纯视觉载体，固定关节、无碰撞、质量可忽略，不影响已验证物理） ================= -->
+    <link name="front_left_wheel_link">
+      <inertial>
+        <origin xyz="0 0 0" rpy="0 0 0"/>
+        <mass value="1e-06"/>
+        <inertia ixx="1e-09" ixy="0" ixz="0" iyy="1e-09" iyz="0" izz="1e-09"/>
+      </inertial>
+      <visual name="front_left_wheel">
+        <origin xyz="0 0 0" rpy="0 0 0"/>
+        <geometry><mesh filename="package://robomaster_description/meshes/wheel.dae" scale="1.0 1.0 1.0"/></geometry>
+        <material name="wheel_plastic"/>
+      </visual>
+    </link>
+    <joint name="front_left_wheel_joint" type="fixed">
+      <origin xyz="0.1 0.1 0.01535" rpy="0 0 0"/>
+      <parent link="chassis_base_link"/><child link="front_left_wheel_link"/>
+    </joint>
+    <link name="front_right_wheel_link">
+      <inertial>
+        <origin xyz="0 0 0" rpy="0 0 0"/>
+        <mass value="1e-06"/>
+        <inertia ixx="1e-09" ixy="0" ixz="0" iyy="1e-09" iyz="0" izz="1e-09"/>
+      </inertial>
+      <visual name="front_right_wheel">
+        <origin xyz="0 0 0" rpy="0 0 0"/>
+        <geometry><mesh filename="package://robomaster_description/meshes/wheel.dae" scale="1.0 -1.0 1.0"/></geometry>
+        <material name="wheel_plastic"/>
+      </visual>
+    </link>
+    <joint name="front_right_wheel_joint" type="fixed">
+      <origin xyz="0.1 -0.1 0.01535" rpy="0 0 0"/>
+      <parent link="chassis_base_link"/><child link="front_right_wheel_link"/>
+    </joint>
+    <link name="rear_left_wheel_link">
+      <inertial>
+        <origin xyz="0 0 0" rpy="0 0 0"/>
+        <mass value="1e-06"/>
+        <inertia ixx="1e-09" ixy="0" ixz="0" iyy="1e-09" iyz="0" izz="1e-09"/>
+      </inertial>
+      <visual name="rear_left_wheel">
+        <origin xyz="0 0 0" rpy="0 0 0"/>
+        <geometry><mesh filename="package://robomaster_description/meshes/wheel.dae" scale="1.0 -1.0 1.0"/></geometry>
+        <material name="wheel_plastic"/>
+      </visual>
+    </link>
+    <joint name="rear_left_wheel_joint" type="fixed">
+      <origin xyz="-0.1 0.1 0.01535" rpy="0 0 0"/>
+      <parent link="chassis_base_link"/><child link="rear_left_wheel_link"/>
+    </joint>
+    <link name="rear_right_wheel_link">
+      <inertial>
+        <origin xyz="0 0 0" rpy="0 0 0"/>
+        <mass value="1e-06"/>
+        <inertia ixx="1e-09" ixy="0" ixz="0" iyy="1e-09" iyz="0" izz="1e-09"/>
+      </inertial>
+      <visual name="rear_right_wheel">
+        <origin xyz="0 0 0" rpy="0 0 0"/>
+        <geometry><mesh filename="package://robomaster_description/meshes/wheel.dae" scale="1.0 1.0 1.0"/></geometry>
+        <material name="wheel_plastic"/>
+      </visual>
+    </link>
+    <joint name="rear_right_wheel_joint" type="fixed">
+      <origin xyz="-0.1 -0.1 0.01535" rpy="0 0 0"/>
+      <parent link="chassis_base_link"/><child link="rear_right_wheel_link"/>
+    </joint>
 
   <!-- ================= 臂基座（官方原点） ================= -->
   <joint name="arm_base_joint" type="fixed">

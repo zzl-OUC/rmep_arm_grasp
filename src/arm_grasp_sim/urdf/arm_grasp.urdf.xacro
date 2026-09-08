@@ -1,0 +1,350 @@
+<?xml version="1.0"?>
+<!-- ============================================================
+RoboMaster EP 工程机器人（底盘+机械臂+机械爪）抓取仿真模型
+来源 jeguzzi/robomaster_ros（MIT）robomaster_description 实测模型
+移植约定（诚实标注）：
+1. 官方 URDF 用 mimic 表达并联连杆，Gazebo classic 不支持 mimic。
+   连杆机构折叠，保留全部官方 mesh 与关节原点：
+   - 臂 2 自由度 arm_1_joint（肩）＋arm_2_joint（肘）
+   - endpoint_bracket_joint 由控制器软件补偿（＝−(arm_1＋arm_2)），
+     对应官方「并联机构使夹爪始终保持与底盘平行」
+   - 内连杆 rod／rod_1~3／triangle 为装饰件，折叠省略（物理等效）
+2. 机械爪：官方为单滑动副 gripper_m_joint 经 12 杆带动双指弧形合围；
+   官方驱动同样只做预录插值。此处每指保留 1 个指根旋转关节
+   （轴 Z，官方 joint_1 原点），指身按官方姿势刚性合并。
+   指根角标定：θ=−0.32 开口约 10cm（官方最大开合），θ=0 约 6.8cm，
+   θ=+0.27 时指尖间隙约 4cm（对应 4cm 方块夹持）。
+3. 舵机力矩/转速官方未公布，effort=6Nm、vel=3rad/s 为工程假设值。
+4. 底盘固定于桌面（chassis_yaw_joint 模拟 EP 底盘回转），
+   麦轮省略（底盘不移动，对本任务无影响）。
+============================================================ -->
+<robot name="ep_grasp" xmlns:xacro="http://playerstage.sourceforge.net/gazebo/xmlschema/#xacro">
+  <xacro:arg name="config_path" default=""/>
+
+  <!-- ================= 材料（官方配色） ================= -->
+  <material name="armor_plastic"><color rgba="0.2277128 0.2277128 0.2277128 0.8"/></material>
+  <material name="chassis"><color rgba="0.0981132 0.0981132 0.0981132 1.0"/></material>
+  <material name="cover_plastic"><color rgba="0.2548322 0.2548322 0.2548322 0.3"/></material>
+  <material name="dark_plastic"><color rgba="0.0281746 0.0281746 0.0281746 1.0"/></material>
+  <material name="metal"><color rgba="0.0281746 0.028 0.0281746 1.0"/></material>
+  <material name="EP_up.001"><color rgba="0.0284811 0.0284811 0.0284811 1.0"/></material>
+
+  <!-- ================= 世界与桌面 ================= -->
+  <link name="world"/>
+  <link name="table_link">
+    <inertial><mass value="10"/><inertia ixx="1" ixy="0" ixz="0" iyy="1" iyz="0" izz="1"/></inertial>
+    <visual><geometry><box size="1.0 0.8 0.05"/></geometry><material name="dark_plastic"/></visual>
+    <collision><geometry><box size="1.0 0.8 0.05"/></geometry></collision>
+  </link>
+  <joint name="table_joint" type="fixed">
+    <parent link="world"/><child link="table_link"/><origin xyz="0 0 0" rpy="0 0 0"/>
+  </joint>
+
+  <!-- ================= EP 底盘（底盘回转关节） ================= -->
+  <joint name="chassis_yaw_joint" type="continuous">
+    <parent link="table_link"/><child link="base_link"/>
+    <origin xyz="0 0 0.025" rpy="0 0 0"/><axis xyz="0 0 1"/>
+    <limit effort="4" velocity="3.14"/><dynamics damping="1.0"/>
+  </joint>
+  <link name="base_link"/>
+
+  <link name="chassis_base_link">
+    <inertial>
+      <origin xyz="-0.0058789 -0.0001128 0.0294307" rpy="0 0 0"/>
+      <mass value="1.934"/>
+      <inertia ixx="0.01451" ixy="0" ixz="0" iyy="0.00512" iyz="0" izz="0.01759"/>
+    </inertial>
+    <visual name="armor">
+      <origin xyz="-0.0064553 -0.078141 0.0292877" rpy="0 0 0"/>
+      <geometry><mesh filename="package://robomaster_description/meshes/armor.dae" scale="1.0 1.0 1.0"/></geometry>
+      <material name="armor_plastic"/>
+    </visual>
+    <visual name="battery">
+      <origin xyz="-0.130336 -0.0018702 0.0174177" rpy="0 0 0"/>
+      <geometry><mesh filename="package://robomaster_description/meshes/battery.dae" scale="1.0 1.0 1.0"/></geometry>
+      <material name="dark_plastic"/>
+    </visual>
+    <visual name="chassis">
+      <origin xyz="-0.0059039 0.0004154 0.0527955" rpy="0 0 0"/>
+      <geometry><mesh filename="package://robomaster_description/meshes/chassis.dae" scale="1.0 1.0 1.0"/></geometry>
+      <material name="chassis"/>
+    </visual>
+    <visual name="controller">
+      <origin xyz="-0.1142288 -0.0006716 0.052675" rpy="0 0 0"/>
+      <geometry><mesh filename="package://robomaster_description/meshes/controller.dae" scale="1.0 1.0 1.0"/></geometry>
+      <material name="dark_plastic"/>
+    </visual>
+    <visual name="controller_cover">
+      <origin xyz="-0.0787757 -0.002522 0.0720827" rpy="0 0 0"/>
+      <geometry><mesh filename="package://robomaster_description/meshes/controller_cover.dae" scale="1.0 1.0 1.0"/></geometry>
+      <material name="cover_plastic"/>
+    </visual>
+    <collision name="base_collision">
+      <origin xyz="-0.0058789 -0.0001128 0.0294307" rpy="0 0 0"/>
+      <geometry><mesh filename="package://robomaster_description/meshes/base_collision.dae" scale="1.0 1.0 1.0"/></geometry>
+    </collision>
+    
+  </link>
+  <joint name="chassis_base_joint" type="fixed">
+    <origin xyz="0 0 0.03465" rpy="0 0 0"/>
+    <parent link="base_link"/><child link="chassis_base_link"/>
+  </joint>
+
+  <!-- ================= 臂基座（官方原点） ================= -->
+  <joint name="arm_base_joint" type="fixed">
+    <origin xyz="0 0.0010384 0.0906477" rpy="0 0 0"/>
+    <parent link="chassis_base_link"/><child link="arm_base_link"/>
+  </joint>
+  <link name="arm_base_link">
+    <inertial>
+      <origin xyz="0 0 0" rpy="0 0 0"/><mass value="0.3"/>
+      <inertia ixx="0.0023" ixy="0" ixz="0" iyy="0.0025" iyz="0" izz="0.00072"/>
+    </inertial>
+    <visual name="arm_base">
+      <origin xyz="-0.0008983 -0.0029745 -2.44e-05" rpy="0 0 0"/>
+      <geometry><mesh filename="package://robomaster_description/meshes/arm_base.dae" scale="1.0 1.0 1.0"/></geometry>
+      <material name="metal"/>
+    </visual>
+    <visual name="left_servo">
+      <origin xyz="-0.013507 0 -0.0060673" rpy="0 0 0"/>
+      <geometry><mesh filename="package://robomaster_description/meshes/left_servo.dae" scale="1.0 1.0 1.0"/></geometry>
+      <material name="metal"/>
+    </visual>
+    <visual name="right_servo">
+      <origin xyz="-0.013507 0 -0.0060673" rpy="0 0 0"/>
+      <geometry><mesh filename="package://robomaster_description/meshes/right_servo.dae" scale="1.0 1.0 1.0"/></geometry>
+      <material name="metal"/>
+    </visual>
+    <collision name="arm_base_collision">
+      <origin xyz="-0.002098 -0.0004909 0.0073523" rpy="0 0 0"/>
+      <geometry><mesh filename="package://robomaster_description/meshes/arm_base_collision.dae" scale="1.0 1.0 1.0"/></geometry>
+    </collision>
+    
+  </link>
+
+  <!-- ================= 肩关节 arm_1（官方原点与限位） ================= -->
+  <joint name="arm_1_joint" type="revolute">
+    <origin xyz="0.0103961 -0.0255713 0.030741" rpy="0 0 0"/>
+    <parent link="arm_base_link"/><child link="arm_1_link"/>
+    <axis xyz="0.0 1.0 0"/>
+    <limit effort="6" velocity="3" lower="-0.274" upper="1.384"/>
+    <dynamics damping="1.0"/>
+  </joint>
+  <link name="arm_1_link">
+    <inertial>
+      <origin xyz="-0.0005586 0.023592 0.0011729" rpy="0 0 0"/>
+      <mass value="0.056"/>
+      <inertia ixx="0.0156113" ixy="2.43e-05" ixz="1.8e-06" iyy="0.0161553" iyz="-0.0023011" izz="0.0018092"/>
+    </inertial>
+    <visual name="arm_1">
+      <origin xyz="0.0073108 0.0184816 0.0437162" rpy="0 0 0"/>
+      <geometry><mesh filename="package://robomaster_description/meshes/arm_1.dae" scale="1.0 1.0 1.0"/></geometry>
+      <material name="metal"/>
+    </visual>
+    <visual name="arm_1_cylinder">
+      <origin xyz="-0.0239031 0.0255713 -0.0368083" rpy="0 0 0"/>
+      <geometry><mesh filename="package://robomaster_description/meshes/arm_1_cylinder.dae" scale="1.0 1.0 1.0"/></geometry>
+      <material name="metal"/>
+    </visual>
+    <collision name="arm_1_collision">
+      <origin xyz="0.0065116 0.0213649 0.0639448" rpy="0 0 0"/>
+      <geometry><mesh filename="package://robomaster_description/meshes/arm_1_collision.dae" scale="1.0 1.0 1.0"/></geometry>
+    </collision>
+    
+  </link>
+
+  <!-- ================= 肘关节 arm_2（官方原点，限位由 rod_3 折算） ================= -->
+  <joint name="arm_2_joint" type="revolute">
+    <origin xyz="0.0018704 0.0438659 0.1210238" rpy="0 0 0"/>
+    <parent link="arm_1_link"/><child link="arm_2_link"/>
+    <axis xyz="0.0 1.0 0"/>
+    <limit effort="6" velocity="3" lower="-1.25" upper="0.40"/>
+    <dynamics damping="1.0"/>
+  </joint>
+  <link name="arm_2_link">
+    <inertial>
+      <origin xyz="0.0222614 -0.0202749 -0.008504" rpy="0 0 0"/>
+      <mass value="0.08"/>
+      <inertia ixx="0.0118624" ixy="1e-06" ixz="-3e-07" iyy="0.0041691" iyz="0.0031106" izz="0.0101456"/>
+    </inertial>
+    <visual name="arm_2">
+      <origin xyz="0.0256122 -0.020134 -0.001308" rpy="0 0 0"/>
+      <geometry><mesh filename="package://robomaster_description/meshes/arm_2.dae" scale="1.0 1.0 1.0"/></geometry>
+      <material name="dark_plastic"/>
+    </visual>
+    <visual name="arm_2_bar_1">
+      <origin xyz="7.62e-05 0.0010863 -0.0002509" rpy="0 0 0"/>
+      <geometry><mesh filename="package://robomaster_description/meshes/arm_2_bar_1.dae" scale="1.0 1.0 1.0"/></geometry>
+      <material name="metal"/>
+    </visual>
+    <visual name="arm_2_bar_2">
+      <origin xyz="-0.0423232 -0.0099192 0.0221971" rpy="0 0 0"/>
+      <geometry><mesh filename="package://robomaster_description/meshes/arm_2_bar_2.dae" scale="1.0 1.0 1.0"/></geometry>
+      <material name="metal"/>
+    </visual>
+    <collision name="arm_2_collision">
+      <origin xyz="0.0222614 -0.0202749 -0.008504" rpy="0 0 0"/>
+      <geometry><mesh filename="package://robomaster_description/meshes/arm_2_collision.dae" scale="1.0 1.0 1.0"/></geometry>
+    </collision>
+    
+  </link>
+
+  <!-- ================= 末端括架（软件补偿保持水平） ================= -->
+  <joint name="endpoint_bracket_joint" type="continuous">
+    <origin xyz="0.1058557 0.006752 -0.0561093" rpy="0 0 0"/>
+    <parent link="arm_2_link"/><child link="endpoint_bracket_link"/>
+    <axis xyz="0.0 1.0 0"/>
+    <limit effort="6" velocity="3"/><dynamics damping="1.0"/>
+  </joint>
+  <link name="endpoint_bracket_link">
+    <inertial>
+      <origin xyz="0.0116468 -0.0288044 0.0041342" rpy="0 0 0"/>
+      <mass value="0.028"/>
+      <inertia ixx="0.0004413" ixy="0.0001147" ixz="2.69e-05" iyy="0.0008301" iyz="-2.89e-05" izz="0.0008237"/>
+    </inertial>
+    <visual name="endpoint_bracket">
+      <origin xyz="0.0071657 -0.0245846 0.0008407" rpy="0 0 0"/>
+      <geometry><mesh filename="package://robomaster_description/meshes/endpoint_bracket.dae" scale="1.0 1.0 1.0"/></geometry>
+      <material name="metal"/>
+    </visual>
+    <collision name="endpoint_bracket_collision">
+      <origin xyz="0.0116468 -0.0288044 0.0041342" rpy="0 0 0"/>
+      <geometry><mesh filename="package://robomaster_description/meshes/endpoint_bracket_collision.dae" scale="1.0 1.0 1.0"/></geometry>
+    </collision>
+    
+  </link>
+
+  <!-- ================= 机械爪基座（官方） ================= -->
+  <joint name="gripper_base_joint" type="fixed">
+    <origin xyz="0.0002793 -0.027026 0.0001815" rpy="0 0 0"/>
+    <parent link="endpoint_bracket_link"/><child link="gripper_link"/>
+  </joint>
+  <link name="gripper_link">
+    <inertial>
+      <origin xyz="0.0326578 -9.78e-05 -0.0327003" rpy="0 0 0"/>
+      <mass value="0.15"/>
+      <inertia ixx="0.0001376" ixy="7.89e-05" ixz="1.5e-06" iyy="0.0002582" iyz="2.9e-06" izz="0.0002497"/>
+    </inertial>
+    <visual name="gripper_base">
+      <geometry><mesh filename="package://robomaster_description/meshes/gripper_base.dae" scale="1.0 1.0 1.0"/></geometry>
+      <material name="EP_up.001"/>
+    </visual>
+    <collision name="gripper_base_collision">
+      <origin xyz="0.0003688 -9.78e-05 -0.0112797" rpy="0 0 0"/>
+      <geometry><mesh filename="package://robomaster_description/meshes/gripper_base_collision.dae" scale="1.0 1.0 1.0"/></geometry>
+    </collision>
+    
+  </link>
+
+  <!-- TCP（官方 gripper_t_link，用于 IK 与状态上报） -->
+  <joint name="gripper_joint_t" type="fixed">
+    <origin xyz="0.124 0 -0.039" rpy="0 0 0"/>
+    <parent link="gripper_link"/><child link="gripper_t_link"/>
+  </joint>
+  <link name="gripper_t_link"/>
+
+  <!-- ================= 左指（指根旋转，指身官方姿势刚性合并） ================= -->
+  <!-- ===== 平行直进双指夹爪：按官方RoboMaster EP规格（开合~10cm / 夹力5N / 双指对称平移，非旋转） ===== -->
+  <!-- ===== 平行直进双指夹爪：按官方RoboMaster EP规格（开合~10cm / 夹力5N / 双指对称平移，非旋转） ===== -->
+  <joint name="gripper_left_joint" type="prismatic">
+    <parent link="gripper_link"/>
+    <child link="left_finger_link"/>
+    <origin xyz="0.048 0 -0.0296" rpy="0 0 0"/>
+    <axis xyz="0 1 0"/>
+    <limit effort="150" velocity="0.05" lower="0.0" upper="0.040"/>
+    <dynamics damping="0.5" friction="0.2"/>
+  </joint>
+  <link name="left_finger_link">
+    <visual>
+      <origin xyz="0 -0.05 0" rpy="0 0 0"/>
+      <geometry><box size="0.045 0.012 0.04"/></geometry>
+      <material name="EP_up.001"/>
+    </visual>
+    <collision>
+      <origin xyz="0 -0.05 0" rpy="0 0 0"/>
+      <geometry><box size="0.045 0.012 0.04"/></geometry>
+    </collision>
+    <inertial>
+      <mass value="0.05"/>
+      <inertia ixx="1e-5" ixy="0" ixz="0" iyy="1e-5" iyz="0" izz="1e-5"/>
+    </inertial>
+  </link>
+
+  <joint name="gripper_right_joint" type="prismatic">
+    <parent link="gripper_link"/>
+    <child link="right_finger_link"/>
+    <origin xyz="0.048 0 -0.0296" rpy="0 0 0"/>
+    <axis xyz="0 -1 0"/>
+    <limit effort="150" velocity="0.05" lower="0.0" upper="0.040"/>
+    <dynamics damping="0.5" friction="0.2"/>
+  </joint>
+  <link name="right_finger_link">
+    <visual>
+      <origin xyz="0 0.05 0" rpy="0 0 0"/>
+      <geometry><box size="0.045 0.012 0.04"/></geometry>
+      <material name="EP_up.001"/>
+    </visual>
+    <collision>
+      <origin xyz="0 0.05 0" rpy="0 0 0"/>
+      <geometry><box size="0.045 0.012 0.04"/></geometry>
+    </collision>
+    <inertial>
+      <mass value="0.05"/>
+      <inertia ixx="1e-5" ixy="0" ixz="0" iyy="1e-5" iyz="0" izz="1e-5"/>
+    </inertial>
+  </link>
+
+  <!-- ================= gazebo 表面与 ros2_control ================= -->
+  <gazebo reference="left_finger_link">
+    <mu1>3.0</mu1>
+    <mu2>3.0</mu2>
+    <kp>1e5</kp>
+    <kd>10</kd>
+    <minDepth>0.0001</minDepth>
+  </gazebo>
+  <gazebo reference="right_finger_link">
+    <mu1>3.0</mu1>
+    <mu2>3.0</mu2>
+    <kp>1e5</kp>
+    <kd>10</kd>
+    <minDepth>0.0001</minDepth>
+  </gazebo>
+  <gazebo>
+    <plugin name="gazebo_grasp_fix" filename="libgazebo_grasp_fix.so">
+      <arm>
+        <arm_name>arm</arm_name>
+        <palm_link>endpoint_bracket_link</palm_link>
+        <gripper_link>left_finger_link</gripper_link>
+        <gripper_link>right_finger_link</gripper_link>
+      </arm>
+      <forces_angle_tolerance>100</forces_angle_tolerance>
+      <update_rate>20</update_rate>
+      <grip_count_threshold>2</grip_count_threshold>
+      <max_grip_count>8</max_grip_count>
+      <release_tolerance>0.005</release_tolerance>
+      <disable_collisions_on_attach>false</disable_collisions_on_attach>
+    </plugin>
+  </gazebo>
+  <gazebo reference="table_link">
+    <mu1>1.0</mu1><mu2>1.0</mu2><kp>1e6</kp><kd>1</kd><minDepth>0.00001</minDepth>
+  </gazebo>
+
+  <gazebo>
+    <plugin filename="libgazebo_ros2_control.so" name="gazebo_ros2_control">
+      <ros><node_name>arm_gazebo_ros2_control</node_name></ros>
+      <parameters>$(arg config_path)</parameters>
+      <robot_param>robot_description</robot_param>
+      <robot_param_node>robot_state_publisher</robot_param_node>
+    </plugin>
+  </gazebo>
+  
+  <ros2_control name="ep_system" type="system">
+    <hardware><plugin>gazebo_ros2_control/GazeboSystem</plugin></hardware>
+    <joint name="chassis_yaw_joint"><command_interface name="velocity"/><state_interface name="position"/><state_interface name="velocity"/></joint>
+    <joint name="arm_1_joint"><command_interface name="velocity"/><state_interface name="position"/><state_interface name="velocity"/></joint>
+    <joint name="arm_2_joint"><command_interface name="velocity"/><state_interface name="position"/><state_interface name="velocity"/></joint>
+    <joint name="endpoint_bracket_joint"><command_interface name="position"/><state_interface name="position"/><state_interface name="velocity"/></joint>
+    <joint name="gripper_left_joint"><command_interface name="effort"/><state_interface name="position"/><state_interface name="velocity"/></joint>
+    <joint name="gripper_right_joint"><command_interface name="effort"/><state_interface name="position"/><state_interface name="velocity"/></joint>
+  </ros2_control>
+</robot>

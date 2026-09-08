@@ -1,0 +1,10 @@
+int32 cycles
+---
+bool success
+int32 success_count
+int32 total_count
+string message
+---
+string current_state
+float32 progress
+bool gripper_closed

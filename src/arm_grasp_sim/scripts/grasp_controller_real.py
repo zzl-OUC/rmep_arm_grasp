@@ -4,7 +4,8 @@
 臂: move_arm action(笛卡尔 x-z 绝对航点, arm_base_link 系, x 向前 z 向上, 无 yaw);
     驱动同时只允许一个 goal(发新 goal 前旧 goal 必须已结束或 cancel), 硬超时 5s, 速度不可配置。
 爪: gripper action(PAUSE/OPEN/CLOSE + power), 无开度反馈, 超时 7s。
-反馈: arm_position topic(10Hz) 是唯一可靠 TCP 位置源; LIFT 后据此确认末端真实抬起。
+反馈: arm_position topic(10Hz) 滞后数秒, 只用于监视/日志和 LIFT 后轮询确认;
+    插值起点、恢复抬升等即时判断一律用 _last_cmd 指令值。
 限速: 航点间按 max_step_m 插值子航点(每段 <= max_step_m)。
 航点约定: (x, z) 绝对坐标(米)。真机无方块真值: 成功 = 所有航点 move_arm/gripper result 成功 + LIFT 抬升确认。
 日志: 每个 goal 一个 CSV(航点序列 + 10Hz TCP 轨迹 + 每轮结果/错误), 目录 log_dir, 文件名带时间戳。"""
@@ -77,7 +78,7 @@ class GraspControllerReal(Node):
         self.grip_client = ActionClient(
             self, GripperControl, '/%s/gripper' % self.rm_ns, callback_group=self._cb)
         self._move_gh = None       # 当前活动的 move_arm goal handle(驱动单 goal 限制)
-        self._last_cmd = self.home  # 最后一条已完成的指令航点(无反馈时的插值起点)
+        self._last_cmd = self.home  # 最后一条已完成的指令航点(插值起点, 替代滞后反馈)
         self.gripper_closed = False
 
         # CSV 日志状态
@@ -201,16 +202,16 @@ class GraspControllerReal(Node):
         return True, 'ok'
 
     def _goto(self, tag, x, z):
-        """工作空间校验 + 按 max_step_m 插值子航点 + 逐段 move_arm。返回 (ok, msg)。"""
+        """工作空间校验 + 按 max_step_m 插值子航点 + 逐段 move_arm。返回 (ok, msg)。
+        插值起点永远用 _last_cmd(上一指令航点): arm_position 反馈滞后数秒,
+        拿它当起点会把臂往回拽再爬回来(实测抽动), 且路径不再确定。"""
         if not self._in_workspace(x, z):
             msg = '目标超出工作空间: %s(%.3f,%.3f) x_range=%s z_range=%s' \
                   % (tag, x, z, self.x_range, self.z_range)
             self.get_logger().error(msg)
             self._log_wp(tag, x, z, 'FAIL', msg)
             return False, msg
-        cur = self._tcp_xz()
-        if cur is None:
-            cur = self._last_cmd
+        cur = self._last_cmd
         dist = math.hypot(x - cur[0], z - cur[1])
         n = max(1, int(math.ceil(dist / self.max_step)))
         if n > 1:
@@ -258,16 +259,23 @@ class GraspControllerReal(Node):
         self._log_wp(tag, math.nan, math.nan, 'OK', 'duration=%.2fs' % (d.sec + d.nanosec * 1e-9))
         return True, 'ok'
 
-    def _confirm_lift(self):
-        """LIFT 确认: arm_position 显示末端确实抬到抓取/安全高度中位以上。"""
-        p = self._tcp_xz()
+    def _confirm_lift(self, timeout=10.0):
+        """LIFT 确认: 轮询等 arm_position 追上来(反馈滞后数秒, 单点读必误判),
+        每 0.2s 读一次, z 升到确认阈以上算抬起; 超时仍低于阈才判 FAIL(真没夹住)。"""
         th = 0.5 * (self.z_grasp + self.z_safe)
+        t0 = _time.time()
+        p = self._tcp_xz()
+        while rclpy.ok() and _time.time() - t0 < timeout:
+            p = self._tcp_xz()
+            if p is not None and p[1] >= th:
+                self.get_logger().info('LIFT 确认: z=%.3f >= %.3f (等 %.1fs)'
+                                       % (p[1], th, _time.time() - t0))
+                return True, 'ok'
+            self._sample_traj()
+            _time.sleep(0.2)
         if p is None:
             return False, '无 arm_position 反馈, 无法确认末端抬起'
-        if p[1] < th:
-            return False, '末端未抬起: z=%.3f < 确认阈 %.3f' % (p[1], th)
-        self.get_logger().info('LIFT 确认: z=%.3f >= %.3f' % (p[1], th))
-        return True, 'ok'
+        return False, '末端未抬起: 等 %.1fs 后 z=%.3f < 确认阈 %.3f' % (timeout, p[1], th)
 
     def _lift_with_confirm(self):
         ok, msg = self._goto(S_LIFT, self.A_x, self.z_safe)
@@ -288,12 +296,16 @@ class GraspControllerReal(Node):
         ]
 
     def _recover_home(self):
-        """失败后的安全回收: 尽力先抬到 z_safe 再回 HOME, 不抛异常。"""
+        """失败后的安全回收: 尽力先抬到 z_safe 再回 HOME, 夹着东西则回位后张爪。
+        抬升判断用 _last_cmd(指令值), 不用滞后的 arm_position 反馈。不抛异常。"""
         try:
-            cur = self._tcp_xz()
-            if cur is not None and cur[1] < self.z_safe and self._in_workspace(cur[0], self.z_safe):
+            cur = self._last_cmd
+            if cur[1] < self.z_safe and self._in_workspace(cur[0], self.z_safe):
                 self._goto('RECOVER_LIFT', cur[0], self.z_safe)
             self._goto(S_HOME, self.home[0], self.home[1])
+            if self.gripper_closed:
+                self.get_logger().info('回 HOME 后张爪(避免夹着物体回位)')
+                self._gripper(GripperControl.Goal.OPEN, 'RECOVER_OPEN')
         except Exception as e:
             self.get_logger().error('回收 HOME 失败: %s' % e)
 

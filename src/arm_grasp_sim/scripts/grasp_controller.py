@@ -103,7 +103,7 @@ class GraspController(Node):
     def __init__(self):
         super().__init__('grasp_controller')
         self.declare_parameter('A_xy', [0.20, 0.0])
-        self.declare_parameter('B_xy', [-0.20, 0.0])
+        self.declare_parameter('B_xy', [0.20, 0.0])
         self.declare_parameter('z_approach', 0.13)
         self.declare_parameter('z_grasp', 0.0757)
         self.declare_parameter('z_lift', 0.095)

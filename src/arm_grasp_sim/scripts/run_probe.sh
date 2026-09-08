@@ -10,6 +10,7 @@ Xvfb :99 -screen 0 1024x768x24 -nolisten unix -listen tcp >/tmp/xvfb.log 2>&1 &
 sleep 3
 source /opt/ros/humble/setup.bash
 source /home/underwater/arm_grasp_ws/install/setup.bash
+export GAZEBO_MODEL_PATH=/home/underwater/arm_grasp_ws/src/robomaster_ros:$GAZEBO_MODEL_PATH
 export GAZEBO_PLUGIN_PATH=/home/underwater/arm_grasp_ws/install/gazebo_grasp_plugin/lib/gazebo_grasp_plugin:$GAZEBO_PLUGIN_PATH
 export LD_LIBRARY_PATH=/home/underwater/arm_grasp_ws/install/gazebo_grasp_plugin/lib/gazebo_grasp_plugin:/home/underwater/arm_grasp_ws/install/gazebo_version_helpers/lib:$LD_LIBRARY_PATH
 export DISPLAY=127.0.0.1:99

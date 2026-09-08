@@ -56,7 +56,7 @@ def generate_launch_description():
     spawn_arm = Node(
         package='gazebo_ros',
         executable='spawn_entity.py',
-        arguments=['-topic', 'robot_description', '-entity', 'arm_grasp'],
+        arguments=['-topic', 'robot_description', '-entity', 'arm_grasp', '-timeout', '600'],
         output='screen',
     )
 
@@ -65,7 +65,7 @@ def generate_launch_description():
         package='gazebo_ros',
         executable='spawn_entity.py',
         arguments=['-file', block_urdf, '-entity', 'block',
-                   '-x', '0.20', '-y', '0.0', '-z', '0.045'],
+                   '-x', '0.20', '-y', '0.0', '-z', '0.045', '-timeout', '600'],
         output='screen',
     )
 
@@ -74,7 +74,7 @@ def generate_launch_description():
         package='controller_manager',
         executable='spawner',
         arguments=['arm_vel_controller', '--controller-manager', '/controller_manager',
-                   '--controller-manager-timeout', '400'],
+                   '--controller-manager-timeout', '900'],
         output='screen',
     )
 
@@ -83,7 +83,7 @@ def generate_launch_description():
         package='controller_manager',
         executable='spawner',
         arguments=['gripper_controller', '--controller-manager', '/controller_manager',
-                   '--controller-manager-timeout', '400'],
+                   '--controller-manager-timeout', '900'],
         output='screen',
     )
 
@@ -92,7 +92,7 @@ def generate_launch_description():
         package='controller_manager',
         executable='spawner',
         arguments=['bracket_controller', '--controller-manager', '/controller_manager',
-                   '--controller-manager-timeout', '400'],
+                   '--controller-manager-timeout', '900'],
         output='screen',
     )
 
@@ -100,7 +100,7 @@ def generate_launch_description():
         package='controller_manager',
         executable='spawner',
         arguments=['joint_state_broadcaster', '--controller-manager', '/controller_manager',
-                   '--controller-manager-timeout', '400'],
+                   '--controller-manager-timeout', '900'],
         output='screen',
     )
 

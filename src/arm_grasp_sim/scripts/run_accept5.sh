@@ -9,6 +9,7 @@ export RMW_IMPLEMENTATION=rmw_fastrtps_cpp
 source /opt/ros/humble/setup.bash 2>/dev/null
 cd /home/underwater/arm_grasp_ws
 source install/setup.bash 2>/dev/null
+export GAZEBO_MODEL_PATH=/home/underwater/arm_grasp_ws/src/robomaster_ros:$GAZEBO_MODEL_PATH
 export GAZEBO_PLUGIN_PATH=/home/underwater/arm_grasp_ws/install/gazebo_grasp_plugin/lib/gazebo_grasp_plugin:$GAZEBO_PLUGIN_PATH
 export LD_LIBRARY_PATH=/home/underwater/arm_grasp_ws/install/gazebo_grasp_plugin/lib/gazebo_grasp_plugin:/home/underwater/arm_grasp_ws/install/gazebo_version_helpers/lib:$LD_LIBRARY_PATH
 
@@ -21,7 +22,7 @@ echo "launch pid=$LPID"
 
 echo "==== wait for controllers + block ====" | tee -a $LOG
 READY=0
-for i in $(seq 1 60); do
+for i in $(seq 1 100); do
   C=$(timeout 5 ros2 control list_controllers 2>/dev/null | grep -c "active")
   B=$(timeout 5 ros2 service call /gazebo/get_entity_state gazebo_msgs/srv/GetEntityState "{name: block}" 2>/dev/null | grep -cE "success[=:] ?[Tt]rue")
   echo "wait $i: controllers_active=$C block_ready=$B" | tee -a $LOG

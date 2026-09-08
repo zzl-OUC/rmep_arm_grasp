@@ -79,10 +79,6 @@ RoboMaster EP 工程机器人（底盘+机械臂+机械爪）抓取仿真模型
       <geometry><mesh filename="package://robomaster_description/meshes/controller_cover.dae" scale="1.0 1.0 1.0"/></geometry>
       <material name="cover_plastic"/>
     </visual>
-    <collision name="base_collision">
-      <origin xyz="-0.0058789 -0.0001128 0.0294307" rpy="0 0 0"/>
-      <geometry><mesh filename="package://robomaster_description/meshes/base_collision.dae" scale="1.0 1.0 1.0"/></geometry>
-    </collision>
     
   </link>
   <joint name="chassis_base_joint" type="fixed">
@@ -115,10 +111,6 @@ RoboMaster EP 工程机器人（底盘+机械臂+机械爪）抓取仿真模型
       <geometry><mesh filename="package://robomaster_description/meshes/right_servo.dae" scale="1.0 1.0 1.0"/></geometry>
       <material name="metal"/>
     </visual>
-    <collision name="arm_base_collision">
-      <origin xyz="-0.002098 -0.0004909 0.0073523" rpy="0 0 0"/>
-      <geometry><mesh filename="package://robomaster_description/meshes/arm_base_collision.dae" scale="1.0 1.0 1.0"/></geometry>
-    </collision>
     
   </link>
 
@@ -146,10 +138,6 @@ RoboMaster EP 工程机器人（底盘+机械臂+机械爪）抓取仿真模型
       <geometry><mesh filename="package://robomaster_description/meshes/arm_1_cylinder.dae" scale="1.0 1.0 1.0"/></geometry>
       <material name="metal"/>
     </visual>
-    <collision name="arm_1_collision">
-      <origin xyz="0.0065116 0.0213649 0.0639448" rpy="0 0 0"/>
-      <geometry><mesh filename="package://robomaster_description/meshes/arm_1_collision.dae" scale="1.0 1.0 1.0"/></geometry>
-    </collision>
     
   </link>
 
@@ -182,10 +170,6 @@ RoboMaster EP 工程机器人（底盘+机械臂+机械爪）抓取仿真模型
       <geometry><mesh filename="package://robomaster_description/meshes/arm_2_bar_2.dae" scale="1.0 1.0 1.0"/></geometry>
       <material name="metal"/>
     </visual>
-    <collision name="arm_2_collision">
-      <origin xyz="0.0222614 -0.0202749 -0.008504" rpy="0 0 0"/>
-      <geometry><mesh filename="package://robomaster_description/meshes/arm_2_collision.dae" scale="1.0 1.0 1.0"/></geometry>
-    </collision>
     
   </link>
 
@@ -207,10 +191,6 @@ RoboMaster EP 工程机器人（底盘+机械臂+机械爪）抓取仿真模型
       <geometry><mesh filename="package://robomaster_description/meshes/endpoint_bracket.dae" scale="1.0 1.0 1.0"/></geometry>
       <material name="metal"/>
     </visual>
-    <collision name="endpoint_bracket_collision">
-      <origin xyz="0.0116468 -0.0288044 0.0041342" rpy="0 0 0"/>
-      <geometry><mesh filename="package://robomaster_description/meshes/endpoint_bracket_collision.dae" scale="1.0 1.0 1.0"/></geometry>
-    </collision>
     
   </link>
 
@@ -229,10 +209,6 @@ RoboMaster EP 工程机器人（底盘+机械臂+机械爪）抓取仿真模型
       <geometry><mesh filename="package://robomaster_description/meshes/gripper_base.dae" scale="1.0 1.0 1.0"/></geometry>
       <material name="EP_up.001"/>
     </visual>
-    <collision name="gripper_base_collision">
-      <origin xyz="0.0003688 -9.78e-05 -0.0112797" rpy="0 0 0"/>
-      <geometry><mesh filename="package://robomaster_description/meshes/gripper_base_collision.dae" scale="1.0 1.0 1.0"/></geometry>
-    </collision>
     
   </link>
 

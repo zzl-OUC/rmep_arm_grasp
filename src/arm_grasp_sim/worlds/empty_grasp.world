@@ -1,11 +1,16 @@
 <?xml version="1.0"?>
 <sdf version="1.7">
   <world name="empty_grasp">
+    <gui>
+      <camera name="user_camera">
+        <pose>0 -0.85 0.55 0 0.55 1.5708</pose>
+      </camera>
+    </gui>
     <include>
       <uri>model://sun</uri>
     </include>
     <scene>
-      <ambient>0.4 0.4 0.4 1</ambient>
+      <ambient>0.75 0.75 0.75 1</ambient>
       <background>0.2 0.2 0.2 1</background>
     </scene>
 

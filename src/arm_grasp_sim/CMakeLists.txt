@@ -10,6 +10,7 @@ install(DIRECTORY urdf config worlds launch
 # 可执行节点安装到 lib/${PROJECT_NAME}（ros2 run 用）
 install(PROGRAMS
   scripts/grasp_controller.py
+  scripts/grasp_controller_real.py
   scripts/grasp_interface.py
   scripts/ik_solver.py
   scripts/fk_probe.py

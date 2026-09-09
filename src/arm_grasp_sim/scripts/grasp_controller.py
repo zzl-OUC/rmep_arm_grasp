@@ -18,7 +18,7 @@ from rclpy.callback_groups import ReentrantCallbackGroup
 from rclpy.executors import MultiThreadedExecutor
 
 from arm_grasp_interfaces.action import GraspCycle
-from gazebo_msgs.srv import GetEntityState, SetEntityState
+from gazebo_msgs.srv import GetEntityState, SetEntityState, SetModelConfiguration
 from std_msgs.msg import String, Float64MultiArray
 from sensor_msgs.msg import JointState
 
@@ -127,6 +127,11 @@ class GraspController(Node):
         self.get_entity = self.create_client(GetEntityState, '/gazebo/get_entity_state', callback_group=self._cb)
         self.set_entity = self.create_client(SetEntityState, '/gazebo/set_entity_state', callback_group=self._cb)
 
+        # Teleport arm to HOME once at startup so the first goal's lift sweep
+        # (which visually interpenetrates the chassis) never happens on camera.
+        import threading
+        threading.Thread(target=self._teleport_home, daemon=True).start()
+
         self._as = ActionServer(
             self, GraspCycle, 'grasp_cycle',
             execute_callback=self._execute, goal_callback=self._goal,
@@ -134,6 +139,24 @@ class GraspController(Node):
         self.get_logger().info('EP grasp_controller 就绪 (A=%s B=%s)' % (self.A, self.B))
 
     # ---------- 基础 ----------
+    def _teleport_home(self):
+        cli = self.create_client(SetModelConfiguration, '/gazebo/set_model_configuration', callback_group=self._cb)
+        if not cli.wait_for_service(timeout_sec=120.0):
+            self.get_logger().warn('set_model_configuration unavailable, skip initial teleport')
+            return
+        for _ in range(300):
+            if 'arm_1_joint' in self.js:
+                break
+            _time.sleep(1.0)
+        _time.sleep(2.0)
+        req = SetModelConfiguration.Request()
+        req.model_name = 'arm_grasp'
+        req.urdf_param_name = 'robot_description'
+        req.joint_names = ['chassis_yaw_joint', 'arm_1_joint', 'arm_2_joint']
+        req.joint_positions = [0.0, 1.30, 0.35]
+        cli.call_async(req)
+        self.get_logger().info('initial teleport: arm -> HOME (0, 1.30, 0.35)')
+
     def _js_cb(self, m):
         self.js = dict(zip(m.name, m.position))
 

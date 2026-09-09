@@ -1,0 +1,3 @@
+[submodule "src/robomaster_ros"]
+	path = src/robomaster_ros
+	url = https://github.com/jeguzzi/robomaster_ros.git

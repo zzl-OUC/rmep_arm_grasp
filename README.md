@@ -7,7 +7,7 @@
 ![Acceptance](https://img.shields.io/badge/验收-仿真%205%2F5%20%7C%20真机%205%2F5-brightgreen)
 
 > 机器人集成小组项目Ⅰ · 小组实验：机械臂定点抓取。
-> 从固定取物点 **A** 抓取目标物，搬运到固定放置区 **B** 释放；**不考视觉定位**，只验证"给定点位 → 稳定抓取 → 搬运放置"的闭环。
+> 从固定取物点 **A** 抓取目标物，搬运到固定放置区 **B** 释放；只验证"给定点位 → 稳定抓取 → 搬运放置"的闭环。
 
 ---
 
@@ -181,32 +181,8 @@ bash src/arm_grasp_sim/scripts/rm_offline_test.sh    # 中文引导：连车→�
 
 ---
 
-## 实验三扩展：桌面物体分类整理场景
 
-`worlds/table_grid_4c2b.world` 是在定点抓取底座上做的实验三预研场景：
 
-- 桌面 + **4 个取物网格** + **2 个分类料盒** + 一台 `libgazebo_ros_camera` 俯视相机（发布 `/top_camera/image_raw`，实测 ≈ 66 Hz，0 error）；
-- 几何可达性已用正运动学采样量化：单站 RoboMaster EP 水平可达为**圆环**（半径 13.5~26.6 cm，环宽仅约 11 cm），单站最多容纳 4 取物格 + 2 料盒；实验三要求测 6 个物体 → 需双站平移或换 6 轴 mechArm（详见仓库外规划脚本 `exp3_reach/`）；
-- 该 world 已并入本仓库，可作为实验三"视觉识别节点（`vision_msgs/Detection2DArray`）+ 网格遍历决策 + 多料盒"开发的仿真底座。
 
----
 
-## 注意事项（踩过的坑）
 
-- **不要再给臂杆加回 mesh 碰撞体**：全部物理验证基线都是在无臂杆碰撞 mesh 下做的，加回会把方块推跑（0/5）。
-- 仿真启动时控制器会把臂从 spawn 零位瞬移到 HOME 位（`SetModelConfiguration`），避免抬臂扫掠的视觉穿模。
-- DJI SDK 进程对 `SIGTERM` 免疫，清理必须 `SIGKILL`；脚本任何 exit 路径都要清子进程。
-- 真机可靠包线 x ≤ 200 mm（臂基座坐标），B 点内收即因此；电量 < 50% 时臂保持精度下降。
-- 真机 `arm_position` 反馈滞后数秒 → 插值起点一律用最后一条指令值（`_last_cmd`），不用滞后反馈当起点（否则抽动）。
-
----
-
-## 许可证与子模块
-
-- 本仓库以 **Apache License 2.0** 发布（见 `LICENSE`）。
-- `robomaster_ros` 为第三方 git submodule（上游 `jeguzzi/robomaster_ros`），其许可证以其上游为准。
-- 克隆请使用：
-
-```bash
-git clone --recurse-submodules <本仓库>
-```

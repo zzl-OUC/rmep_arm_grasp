@@ -17,6 +17,7 @@ src/
     urdf/arm_grasp.urdf.xacro       EP 机械臂+底盘模型（臂杆碰撞体已按基线决策移除，见下方注意事项）
     urdf/block.urdf                 目标方块（红色）
     worlds/empty_grasp.world        桌面场景（update_rate=2500，RTF≈2.2）
+    worlds/table_grid_4c2b.world   实验三场景：桌面 + 4 取物网格 + 2 料盒 + 俯视相机（已验证 0 error，/top_camera/image_raw ≈66Hz）
     config/controllers.yaml         ros2_control 控制器配置
     config/grasp_real.yaml          真机点位参数（A/B/安全高度，仿真→真机只改这里）
     scripts/grasp_controller.py     仿真抓取节点（GraspCycle action server）

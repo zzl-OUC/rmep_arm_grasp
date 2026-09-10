@@ -1,0 +1,215 @@
+<?xml version="1.0"?>
+<sdf version="1.7">
+  <!-- ============================================================
+       实验3 桌面分类场景（自动生成，勿手改）
+       生成脚本：exp3_reach/build_world.py
+       布局：4 个取物网格 + 2 个分类料盒
+             全部中心置于半径 19.0 cm 的圆周上（朝向圆心）
+       依据：可达圆环 r ∈ [14.46, 25.64] cm（reach_analysis.py 实测）
+       注意：桌面本体由 URDF 的 table_link 提供（1.0 x 0.8 m，顶面 z=+0.025），
+             本 world 不再重复建桌面，只摆放网格与料盒。
+       ============================================================ -->
+  <world name="table_grid">
+    <gui>
+      <camera name="user_camera">
+        <pose>0 -1.05 0.75 0 0.62 1.5708</pose>
+      </camera>
+    </gui>
+    <include><uri>model://sun</uri></include>
+    <scene>
+      <ambient>0.8 0.8 0.8 1</ambient>
+      <background>0.25 0.25 0.25 1</background>
+    </scene>
+
+    <!-- /gazebo/model_states、get/set_entity_state：物体复位与位姿校验依赖 -->
+    <plugin name="gazebo_ros_state" filename="/opt/ros/humble/lib/libgazebo_ros_state.so">
+      <ros><namespace>/gazebo</namespace></ros>
+      <update_rate>20</update_rate>
+    </plugin>
+
+    <physics name="default" type="ode">
+      <real_time_update_rate>2500</real_time_update_rate>
+      <max_step_size>0.001</max_step_size>
+      <real_time_factor>1.0</real_time_factor>
+      <ode>
+        <solver><type>quick</type><iters>200</iters><sor>1.0</sor></solver>
+        <constraints><tolerance>0.001</tolerance></constraints>
+      </ode>
+    </physics>
+
+  <model name="desk_layout">
+    <static>true</static>
+    <pose frame="">0 0 0 0 0 0</pose>
+    <link name="cell_1">
+      <pose frame="">0.1900 0.0000 0.0270 0 0 1.5708</pose>
+      <collision name="cell_1_col">
+        <geometry><box><size>0.16 0.1 0.004</size></box></geometry>
+        <surface><friction><ode><mu>1.0</mu><mu2>1.0</mu2></ode></friction></surface>
+      </collision>
+      <visual name="cell_1_vis">
+        <geometry><box><size>0.16 0.1 0.004</size></box></geometry>
+        <material><ambient>0.85 0.87 0.90 1</ambient><diffuse>0.85 0.87 0.90 1</diffuse></material>
+      </visual>
+    </link>
+    <link name="cell_2">
+      <pose frame="">0.0950 0.1645 0.0270 0 0 2.6180</pose>
+      <collision name="cell_2_col">
+        <geometry><box><size>0.16 0.1 0.004</size></box></geometry>
+        <surface><friction><ode><mu>1.0</mu><mu2>1.0</mu2></ode></friction></surface>
+      </collision>
+      <visual name="cell_2_vis">
+        <geometry><box><size>0.16 0.1 0.004</size></box></geometry>
+        <material><ambient>0.70 0.74 0.80 1</ambient><diffuse>0.70 0.74 0.80 1</diffuse></material>
+      </visual>
+    </link>
+    <link name="cell_3">
+      <pose frame="">-0.0950 0.1645 0.0270 0 0 3.6652</pose>
+      <collision name="cell_3_col">
+        <geometry><box><size>0.16 0.1 0.004</size></box></geometry>
+        <surface><friction><ode><mu>1.0</mu><mu2>1.0</mu2></ode></friction></surface>
+      </collision>
+      <visual name="cell_3_vis">
+        <geometry><box><size>0.16 0.1 0.004</size></box></geometry>
+        <material><ambient>0.85 0.87 0.90 1</ambient><diffuse>0.85 0.87 0.90 1</diffuse></material>
+      </visual>
+    </link>
+    <link name="cell_4">
+      <pose frame="">-0.1900 0.0000 0.0270 0 0 4.7124</pose>
+      <collision name="cell_4_col">
+        <geometry><box><size>0.16 0.1 0.004</size></box></geometry>
+        <surface><friction><ode><mu>1.0</mu><mu2>1.0</mu2></ode></friction></surface>
+      </collision>
+      <visual name="cell_4_vis">
+        <geometry><box><size>0.16 0.1 0.004</size></box></geometry>
+        <material><ambient>0.70 0.74 0.80 1</ambient><diffuse>0.70 0.74 0.80 1</diffuse></material>
+      </visual>
+    </link>
+    <link name="bin_0_base">
+      <pose frame="">-0.0950 -0.1645 0.0280 0 0 5.7596</pose>
+      <collision name="bin_0_base_col">
+        <geometry><box><size>0.18 0.1 0.006</size></box></geometry>
+      </collision>
+      <visual name="bin_0_base_vis">
+        <geometry><box><size>0.18 0.1 0.006</size></box></geometry>
+        <material><ambient>0.30 0.60 0.35 1</ambient><diffuse>0.30 0.60 0.35 1</diffuse></material>
+      </visual>
+    </link>
+    <link name="bin_0_wall_xa">
+      <pose frame="">-0.0715 -0.1238 0.0550 0 0 5.7596</pose>
+      <collision name="bin_0_wall_xa_col">
+        <geometry><box><size>0.18 0.006 0.06</size></box></geometry>
+      </collision>
+      <visual name="bin_0_wall_xa_vis">
+        <geometry><box><size>0.18 0.006 0.06</size></box></geometry>
+        <material><ambient>0.30 0.60 0.35 1</ambient><diffuse>0.30 0.60 0.35 1</diffuse></material>
+      </visual>
+    </link>
+    <link name="bin_0_wall_xb">
+      <pose frame="">-0.1185 -0.2052 0.0550 0 0 5.7596</pose>
+      <collision name="bin_0_wall_xb_col">
+        <geometry><box><size>0.18 0.006 0.06</size></box></geometry>
+      </collision>
+      <visual name="bin_0_wall_xb_vis">
+        <geometry><box><size>0.18 0.006 0.06</size></box></geometry>
+        <material><ambient>0.30 0.60 0.35 1</ambient><diffuse>0.30 0.60 0.35 1</diffuse></material>
+      </visual>
+    </link>
+    <link name="bin_0_wall_ya">
+      <pose frame="">-0.0197 -0.2080 0.0550 0 0 5.7596</pose>
+      <collision name="bin_0_wall_ya_col">
+        <geometry><box><size>0.006 0.1 0.06</size></box></geometry>
+      </collision>
+      <visual name="bin_0_wall_ya_vis">
+        <geometry><box><size>0.006 0.1 0.06</size></box></geometry>
+        <material><ambient>0.30 0.60 0.35 1</ambient><diffuse>0.30 0.60 0.35 1</diffuse></material>
+      </visual>
+    </link>
+    <link name="bin_0_wall_yb">
+      <pose frame="">-0.1703 -0.1210 0.0550 0 0 5.7596</pose>
+      <collision name="bin_0_wall_yb_col">
+        <geometry><box><size>0.006 0.1 0.06</size></box></geometry>
+      </collision>
+      <visual name="bin_0_wall_yb_vis">
+        <geometry><box><size>0.006 0.1 0.06</size></box></geometry>
+        <material><ambient>0.30 0.60 0.35 1</ambient><diffuse>0.30 0.60 0.35 1</diffuse></material>
+      </visual>
+    </link>
+    <link name="bin_1_base">
+      <pose frame="">0.0950 -0.1645 0.0280 0 0 6.8068</pose>
+      <collision name="bin_1_base_col">
+        <geometry><box><size>0.18 0.1 0.006</size></box></geometry>
+      </collision>
+      <visual name="bin_1_base_vis">
+        <geometry><box><size>0.18 0.1 0.006</size></box></geometry>
+        <material><ambient>0.85 0.65 0.20 1</ambient><diffuse>0.85 0.65 0.20 1</diffuse></material>
+      </visual>
+    </link>
+    <link name="bin_1_wall_xa">
+      <pose frame="">0.0715 -0.1238 0.0550 0 0 6.8068</pose>
+      <collision name="bin_1_wall_xa_col">
+        <geometry><box><size>0.18 0.006 0.06</size></box></geometry>
+      </collision>
+      <visual name="bin_1_wall_xa_vis">
+        <geometry><box><size>0.18 0.006 0.06</size></box></geometry>
+        <material><ambient>0.85 0.65 0.20 1</ambient><diffuse>0.85 0.65 0.20 1</diffuse></material>
+      </visual>
+    </link>
+    <link name="bin_1_wall_xb">
+      <pose frame="">0.1185 -0.2052 0.0550 0 0 6.8068</pose>
+      <collision name="bin_1_wall_xb_col">
+        <geometry><box><size>0.18 0.006 0.06</size></box></geometry>
+      </collision>
+      <visual name="bin_1_wall_xb_vis">
+        <geometry><box><size>0.18 0.006 0.06</size></box></geometry>
+        <material><ambient>0.85 0.65 0.20 1</ambient><diffuse>0.85 0.65 0.20 1</diffuse></material>
+      </visual>
+    </link>
+    <link name="bin_1_wall_ya">
+      <pose frame="">0.1703 -0.1210 0.0550 0 0 6.8068</pose>
+      <collision name="bin_1_wall_ya_col">
+        <geometry><box><size>0.006 0.1 0.06</size></box></geometry>
+      </collision>
+      <visual name="bin_1_wall_ya_vis">
+        <geometry><box><size>0.006 0.1 0.06</size></box></geometry>
+        <material><ambient>0.85 0.65 0.20 1</ambient><diffuse>0.85 0.65 0.20 1</diffuse></material>
+      </visual>
+    </link>
+    <link name="bin_1_wall_yb">
+      <pose frame="">0.0197 -0.2080 0.0550 0 0 6.8068</pose>
+      <collision name="bin_1_wall_yb_col">
+        <geometry><box><size>0.006 0.1 0.06</size></box></geometry>
+      </collision>
+      <visual name="bin_1_wall_yb_vis">
+        <geometry><box><size>0.006 0.1 0.06</size></box></geometry>
+        <material><ambient>0.85 0.65 0.20 1</ambient><diffuse>0.85 0.65 0.20 1</diffuse></material>
+      </visual>
+    </link>
+  </model>
+
+  <model name="top_camera">
+    <static>true</static>
+    <pose frame="">0 0 1.0 0 1.5708 0</pose>
+    <link name="top_camera_link">
+      <sensor name="top_camera_sensor" type="camera">
+        <pose frame="">0 0 0 0 0 0</pose>
+        <camera>
+          <horizontal_fov>0.95</horizontal_fov>
+          <image><width>800</width><height>640</height></image>
+          <clip><near>0.05</near><far>10.0</far></clip>
+        </camera>
+        <always_on>true</always_on>
+        <update_rate>30</update_rate>
+        <visualize>false</visualize>
+        <plugin name="top_camera_controller" filename="libgazebo_ros_camera.so">
+          <!-- 实测：插件默认把 model 名当命名空间，camera_name 再拼一层，
+               会得到 /top_camera/top_camera/image_raw。
+               显式把命名空间压到根，camera_name 就是唯一前缀。 -->
+          <ros><namespace>/</namespace></ros>
+          <camera_name>top_camera</camera_name>
+          <frame_name>top_camera_optical_frame</frame_name>
+        </plugin>
+      </sensor>
+    </link>
+  </model>
+  </world>
+</sdf>

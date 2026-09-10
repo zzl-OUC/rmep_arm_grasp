@@ -1,0 +1,10 @@
+# Cross-platform line-ending normalization (ROS/colcon 工程以 LF 为准)
+* text=auto eol=lf
+
+*.sh  text eol=lf
+*.py  text eol=lf
+*.yaml text eol=lf
+*.xacro text eol=lf
+*.urdf text eol=lf
+*.world text eol=lf
+*.md   text eol=lf

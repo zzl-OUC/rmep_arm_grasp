@@ -143,10 +143,8 @@ export GAZEBO_PLUGIN_PATH=$PWD/install/gazebo_grasp_plugin/lib/gazebo_grasp_plug
 ## 仿真运行（验收）
 
 ```bash
-ros2 launch arm_grasp_sim grasp_sim.launch.py        # 一键启动完整系统
-ros2 run arm_grasp_sim grasp_interface               # 另开终端：5 连抓验收，>=4/5 通过
-# 或一条龙：bash src/arm_grasp_sim/scripts/run_accept5.sh
-```
+ros2 launch arm_grasp_sim grasp_sim.launch.py        # 一键启动
+ros2 run arm_grasp_sim grasp_interface              ```
 
 **演示视频**
 
@@ -159,8 +157,7 @@ ros2 run arm_grasp_sim grasp_interface               # 另开终端：5 连抓�
 电脑连接小车热点（RoboMaster 热点，车 = `192.168.2.1`，连接后电脑断网属正常），然后：
 
 ```bash
-bash src/arm_grasp_sim/scripts/rm_offline_test.sh    # 中文引导：连车→夹爪→臂动作→单抓→5 连抓
-```
+bash src/arm_grasp_sim/scripts/rm_offline_test.sh  ```
 
 真机点位在 `config/grasp_real.yaml`：A = 车头前缘 8cm（臂基座 x=0.20 m），B = 前缘 3cm（x=0.15 m），安全高度 0.10 m。仿真 → 真机只换设备/通信/位置参数，任务逻辑（`GraspCycle` 状态机）完全一致。
 
@@ -174,9 +171,8 @@ bash src/arm_grasp_sim/scripts/rm_offline_test.sh    # 中文引导：连车→�
 
 | 项目 | 点位 | 结果 |
 |---|---|---|
-| 仿真 5 连抓 | A(0.20,0.0) → B(0.20,0.0) | **5/5 成功**（判据：方块落点离 B < 6 cm 且高度对） |
-| 真机 5 连抓 | A(x=0.20) → B(x=0.15) | **5/5 成功**（判据：所有航点 + 爪动作 result 成功 + LIFT 抬升确认） |
-
+| 仿真 5 连抓 | A(0.20,0.0) → B(0.20,0.0) | 
+| 真机 5 连抓 | A(x=0.20) → B(x=0.15) |
 验收阈值：`success_count >= 4/5` 即 PASS。每轮真机轨迹日志见 `logs/real_machine/`。
 
 ---

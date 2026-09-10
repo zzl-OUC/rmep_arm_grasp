@@ -3,7 +3,7 @@
 ![ROS2](https://img.shields.io/badge/ROS2-Humble-22314E?logo=ros&logoColor=white)
 ![Gazebo](https://img.shields.io/badge/Gazebo-Classic%2011-1a7cff)
 ![Ubuntu](https://img.shields.io/badge/Ubuntu-22.04-E95420?logo=ubuntu&logoColor=white)
-![License](https://img.shields.io/badge/License-MIT-yellow.svg)
+![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)
 ![Acceptance](https://img.shields.io/badge/验收-仿真%205%2F5%20%7C%20真机%205%2F5-brightgreen)
 
 > 机器人集成小组项目Ⅰ · 小组实验：机械臂定点抓取。
@@ -203,7 +203,7 @@ bash src/arm_grasp_sim/scripts/rm_offline_test.sh    # 中文引导：连车→�
 
 ## 许可证与子模块
 
-- 本仓库以 **MIT License** 发布（见 `LICENSE`）。
+- 本仓库以 **Apache License 2.0** 发布（见 `LICENSE`）。
 - `robomaster_ros` 为第三方 git submodule（上游 `jeguzzi/robomaster_ros`），其许可证以其上游为准。
 - 克隆请使用：
 

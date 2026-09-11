@@ -1,13 +1,15 @@
-# RoboMaster EP 机械臂定点抓取（仿真 + 真机）
+# RoboMaster EP 机械臂抓取：定点抓取 + 桌面物体分类整理（仿真 + 真机）
 
 ![ROS2](https://img.shields.io/badge/ROS2-Humble-22314E?logo=ros&logoColor=white)
 ![Gazebo](https://img.shields.io/badge/Gazebo-Classic%2011-1a7cff)
 ![Ubuntu](https://img.shields.io/badge/Ubuntu-22.04-E95420?logo=ubuntu&logoColor=white)
 ![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)
-![Acceptance](https://img.shields.io/badge/验收-仿真%205%2F5%20%7C%20真机%205%2F5-brightgreen)
+![Acceptance](https://img.shields.io/badge/验收-定点抓取%205%2F5%20%7C%20分类整理%206%2F6-brightgreen)
 
-> 机器人集成小组项目Ⅰ · 小组实验：机械臂定点抓取。
-> 从固定取物点 **A** 抓取目标物，搬运到固定放置区 **B** 释放；只验证"给定点位 → 稳定抓取 → 搬运放置"的闭环。
+> 机器人集成小组项目Ⅰ · 小组实验。
+>
+> - **实验二 · 定点抓取**：从固定取物点 **A** 抓取目标物，搬运到固定放置区 **B** 释放，验证「给定点位 → 稳定抓取 → 搬运放置」闭环（仿真 5/5、真机 5/5）。
+> - **实验三 · 桌面物体分类整理**：俯视相机识别桌面方块的颜色与位置，机械臂自动逐个抓取并按类别放入对应料盒（仿真 6/6，全自动无人工干预）。
 
 ---
 
@@ -171,14 +173,88 @@ bash src/arm_grasp_sim/scripts/rm_offline_test.sh  ```
 
 | 项目 | 点位 | 结果 |
 |---|---|---|
-| 仿真 5 连抓 | A(0.20,0.0) → B(0.20,0.0) | 
-| 真机 5 连抓 | A(x=0.20) → B(x=0.15) |
-验收阈值：`success_count >= 4/5` 即 PASS。每轮真机轨迹日志见 `logs/real_machine/`。
+| 仿真 5 连抓 | A(0.20, 0.0) → B(0.20, 0.0) | **5/5 PASS** |
+| 真机 5 连抓 | A(x=0.20) → B(x=0.15) | **5/5 PASS** |
+
+验收阈值：`success_count >= 4/5` 即 PASS。每轮真机轨迹日志见 `logs/real_machine/`（5 个 CSV，末行均为 `CYCLE_1_OK`）。
 
 ---
 
+## 实验三扩展：桌面物体分类整理场景
 
+在定点抓取（实验二）基础上扩展为**自动分类整理**：机械臂不再只认固定点位，而是由俯视相机识别桌面物体、判断类别、再搬进对应料盒。
 
+### 场景布局
 
+```
+            俯视相机 (z=1.0, 朝下)
+   cell_2 ●        ● cell_3        绿盒 bin_0 (-0.095, -0.1645)
+ cell_5 ●   [机械臂]   ● cell_6
+   cell_1 ●        ● cell_4        黄盒 bin_1 ( 0.095, -0.1645)
+```
 
+- 6 个取物网格：`cell_1(0.19, 0)` `cell_2(0.095, 0.1645)` `cell_3(-0.095, 0.1645)`
+  `cell_4(-0.19, 0)` `cell_5(0.1645, 0.095)` `cell_6(-0.1645, 0.095)`
+- 6 个方块：绿 3（cell_1/3/5）+ 黄 3（cell_2/4/6），与 `GRIDS`/`CELLS` 一一对应
+- 分类规则：绿 → `bin_0`，黄 → `bin_1`
 
+### 链路（4 个节点 + 1 个 action）
+
+| 节点 | 输入 → 输出 | 作用 |
+|---|---|---|
+| `vision_classifier.py` | `/top_camera/image_raw` → `/detections` | HSV 颜色分割，输出检测框与类别；`max_area` 过滤料盒等大色块 |
+| `grid_mapper.py` | `/detections` → `/grid_detections` | 像素坐标经相机内参投影到桌面坐标，归入最近网格（俯视画面相对世界旋转 180°） |
+| `classify_task_node.py` | `/grid_detections` → 任务状态机 | 扫描 → 计划 → 逐个下发抓取目标；处理空网格 / 未识别 / 抓取失败（重试 1 次）|
+| `classify_grasp_server.py` | `ClassifyGrasp` action | 单次「抓取 → 搬运 → 放置」动作，复用实验二已验收的运动层 |
+
+抓取序列：`HOME → APPROACH_GRID → DESCEND_GRID → GRASP → LIFT(抬至 Q_CARRY) → TRANSPORT(转 yaw 到料盒) → DESCEND_BIN → RELEASE → LIFT_BIN`。
+
+### 一键运行
+
+```bash
+source /opt/ros/humble/setup.bash
+source ~/arm_grasp_ws/install/setup.bash
+ros2 launch arm_grasp_sim classify_sim.launch.py
+```
+
+全自动完成 6 个方块的识别与分类放置，无需人工干预。过程日志：`~/classify_logs/task_log.json`。
+
+### 验收结果（2026-09-11）
+
+```
+DONE placed=6 failed=0 skipped=0
+```
+
+| 网格 | 类别 | 目标料盒 | 距盒心 | 结果 |
+|---|---|---|---|---|
+| cell_1 | 绿 | bin_0 | 0.057 m | ✅ |
+| cell_3 | 绿 | bin_0 | 0.031 m | ✅ |
+| cell_5 | 绿 | bin_0 | 0.027 m | ✅ |
+| cell_2 | 黄 | bin_1 | 0.033 m | ✅ |
+| cell_4 | 黄 | bin_1 | 0.027 m | ✅ |
+| cell_6 | 黄 | bin_1 | 0.031 m | ✅ |
+
+**6/6 全部正确分类**，零失败、零重试；放置判定阈值为距盒心 < 0.07 m。视觉链路单独验证同为 6/6（6 个网格的类别全部识别正确）。
+
+---
+
+## 注意事项（踩过的坑）
+
+以下都是实测踩出来的，改环境或换机器时优先排查这几项。
+
+1. **机械臂的 .dae 视觉网格会让 Gazebo 渲染线程崩溃**（WSL + llvmpipe 软渲染）。
+   表现：spawn 机械臂后 `/top_camera/image_raw` 与 `/top_camera/camera_info` 直接停发（publisher 还在，帧数为 0），整个视觉链路失效。
+   处理：spawn 使用去掉全部 `<visual>` 的 URDF（`scripts/make_novis_urdf.py` 生成）；`collision`、插件、控制器全部保留，物理行为不变，`robot_state_publisher` 仍用带视觉的原 xacro，RViz 中外观正常。
+
+2. **生成 URDF 时 xacro 必须带 `config_path:=controllers.yaml`**。
+   漏了这个参数，`ros2_control` 插件的 `<parameters>` 会是空的，controller_manager 起不来 → spawner 卡在 `waiting for /controller_manager/list_controllers` → 所有关节状态读成 0。
+
+3. **`libgazebo_grasp_fix.so` 需要手动追加插件路径。**
+   `gazebo_grasp_plugin` 包没有生成 `GAZEBO_PLUGIN_PATH` 的 hook，缺失时 Gazebo 只报一行 `[Err] Failed to load plugin`，**抓取会静默失败**——夹爪合上了但方块没被 attach，搬运时是被指尖在桌面上推走的。
+   处理：`export GAZEBO_PLUGIN_PATH=~/arm_grasp_ws/install/gazebo_grasp_plugin/lib/gazebo_grasp_plugin:$GAZEBO_PLUGIN_PATH`（launch 里已固化）。
+
+4. **yaw 转动不能直接套用定点抓取的参数。** 实验二验收时 A、B 是同一点，全程 yaw 不转；分类任务里抓取点与料盒方向相差最大 4.19 rad，需要按角度差自适应时长，并给足到位容差。
+
+5. **搬运必须先把方块抬离桌面。** 贴着桌面拖行会把所有轴一起拖慢（yaw 实测从 0.62 rad/s 掉到 0.17 rad/s），导致放置全部超时失败。抬臂姿态 `Q_CARRY=(0.90, -0.30)`，TCP 高 0.11 m，方块底面悬空约 6.5 cm。
+
+6. **WSL 里起 gzserver 需要软渲染环境变量**：`DISPLAY=:0 LIBGL_ALWAYS_SOFTWARE=1 GALLIUM_DRIVER=llvmpipe`，否则相机完全不出图。

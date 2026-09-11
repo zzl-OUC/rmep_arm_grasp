@@ -1,0 +1,15 @@
+# ClassifyGrasp.action — 实验三分类抓取
+# 请求: 网格号 + 物体类别 + 目标料盒
+string grid_id     # cell_1..cell_4
+string class_id    # green_block / yellow_block
+string bin_id      # bin_0 / bin_1
+---
+# 结果
+bool success
+string bin_id      # 实际放置料盒(回显)
+string message     # 判定信息(方块距盒心距离 / 失败原因)
+---
+# 反馈
+string current_state
+float32 progress
+bool gripper_closed

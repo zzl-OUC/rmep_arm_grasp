@@ -84,6 +84,28 @@
         <material><ambient>0.70 0.74 0.80 1</ambient><diffuse>0.70 0.74 0.80 1</diffuse></material>
       </visual>
     </link>
+    <link name="cell_5">
+      <pose frame="">0.1645 0.0950 0.0270 0 0 2.0944</pose>
+      <collision name="cell_5_col">
+        <geometry><box><size>0.16 0.1 0.004</size></box></geometry>
+        <surface><friction><ode><mu>1.0</mu><mu2>1.0</mu2></ode></friction></surface>
+      </collision>
+      <visual name="cell_5_vis">
+        <geometry><box><size>0.16 0.1 0.004</size></box></geometry>
+        <material><ambient>0.85 0.87 0.90 1</ambient><diffuse>0.85 0.87 0.90 1</diffuse></material>
+      </visual>
+    </link>
+    <link name="cell_6">
+      <pose frame="">-0.1645 0.0950 0.0270 0 0 4.1888</pose>
+      <collision name="cell_6_col">
+        <geometry><box><size>0.16 0.1 0.004</size></box></geometry>
+        <surface><friction><ode><mu>1.0</mu><mu2>1.0</mu2></ode></friction></surface>
+      </collision>
+      <visual name="cell_6_vis">
+        <geometry><box><size>0.16 0.1 0.004</size></box></geometry>
+        <material><ambient>0.70 0.74 0.80 1</ambient><diffuse>0.70 0.74 0.80 1</diffuse></material>
+      </visual>
+    </link>
     <link name="bin_0_base">
       <pose frame="">-0.0950 -0.1645 0.0280 0 0 5.7596</pose>
       <collision name="bin_0_base_col">

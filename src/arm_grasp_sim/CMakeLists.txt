@@ -13,6 +13,10 @@ install(PROGRAMS
   scripts/grasp_controller_real.py
   scripts/grasp_interface.py
   scripts/send_grasp_goal.py
+  scripts/vision_classifier.py
+  scripts/grid_mapper.py
+  scripts/classify_task_node.py
+  scripts/classify_grasp_server.py
   DESTINATION lib/${PROJECT_NAME})
 
 ament_package()

@@ -39,7 +39,8 @@ class ClassifyTaskNode(Node):
         self.declare_parameter('log_dir', os.path.expanduser('~/classify_logs'))
         self.declare_parameter(
             'class_bin_map',
-            '{"green_block": "bin_0", "yellow_block": "bin_1"}')
+            '{"green_block": "bin_0", "yellow_block": "bin_1", '
+            ' "red_block": "bin_2", "blue_block": "bin_3"}')
         self.min_score = float(self.get_parameter('min_score').value)
         self.scan_timeout = float(self.get_parameter('scan_timeout').value)
         self.log_dir = self.get_parameter('log_dir').value
@@ -145,6 +146,10 @@ class ClassifyTaskNode(Node):
                 continue
             it['retry'] = 0
             queue.append(it)
+        # 确定性顺序: 按 cell 编号升序处理(cell_1 最先)。目的: cell_1 与 cell_2 相邻,
+        # 之前 cell_1 总排最后, 被前序搬运/抓取蹭飞(8~17cm)导致夹空失败; 让其最先处理,
+        # block_0 在被触碰前即被抓走移走, 后续格不再有邻块可蹭。
+        queue.sort(key=lambda it: int(it['grid'].split('_')[1]))
         # 记录空网格(全部 6 网格中未出现的)
         seen = {it['grid'] for it in queue}
         for g in ('cell_1', 'cell_2', 'cell_3', 'cell_4', 'cell_5', 'cell_6'):

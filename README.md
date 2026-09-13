@@ -4,7 +4,7 @@
 ![Gazebo](https://img.shields.io/badge/Gazebo-Classic%2011-1a7cff)
 ![Ubuntu](https://img.shields.io/badge/Ubuntu-22.04-E95420?logo=ubuntu&logoColor=white)
 ![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)
-![Acceptance](https://img.shields.io/badge/验收-定点抓取%205%2F5%20%7C%20分类整理%206%2F6-brightgreen)
+![Acceptance](https://img.shields.io/badge/验收-定点抓取%205%2F5%20%7C%20四色分类整理%206%2F6-brightgreen)
 
 > 机器人集成小组项目Ⅰ · 小组实验。
 >
@@ -95,9 +95,9 @@ src/
   arm_grasp_sim/           仿真 + 真机全部任务代码
     launch/grasp_sim.launch.py      一键启动仿真（Gazebo+控制器+抓取节点）
     urdf/arm_grasp.urdf.xacro       EP 机械臂+底盘模型（臂杆碰撞体已按基线决策移除，见下方注意事项）
-    urdf/block.urdf                 目标方块（4cm 绿方块，质量 0.05kg）
+    urdf/block.urdf                 目标方块（4cm，绿/黄/红/蓝四色，质量 0.05kg）；各色 URDF：block.urdf / block_yellow.urdf / block_red.urdf / block_blue.urdf
     worlds/empty_grasp.world        桌面场景（update_rate=2500，RTF≈2.2）
-    worlds/table_grid_4c2b.world   实验三场景：桌面 + 4 取物网格 + 2 料盒 + 俯视相机（已验证 0 error，/top_camera/image_raw ≈66Hz）
+    worlds/table_grid_4c2b.world   实验三场景：桌面 + 6 取物网格 + 4 料盒（中性灰，避免与同色方块合并）+ 俯视相机（已验证 0 error，/top_camera/image_raw ≈66Hz）
     config/controllers.yaml         ros2_control 控制器配置
     config/grasp_real.yaml          真机点位参数（A/B/安全高度，仿真→真机只改这里）
     scripts/grasp_controller.py     仿真抓取节点（GraspCycle action server）
@@ -188,21 +188,21 @@ bash src/arm_grasp_sim/scripts/rm_offline_test.sh  ```
 
 ```
             俯视相机 (z=1.0, 朝下)
-   cell_2 ●        ● cell_3        绿盒 bin_0 (-0.095, -0.1645)
+   cell_2 ●        ● cell_3        bin_2 ( 0.0770, -0.2114)
  cell_5 ●   [机械臂]   ● cell_6
-   cell_1 ●        ● cell_4        黄盒 bin_1 ( 0.095, -0.1645)
+   cell_1 ●        ● cell_4        bin_1 (-0.0770, -0.2114)
 ```
 
-- 6 个取物网格：`cell_1(0.19, 0)` `cell_2(0.095, 0.1645)` `cell_3(-0.095, 0.1645)`
-  `cell_4(-0.19, 0)` `cell_5(0.1645, 0.095)` `cell_6(-0.1645, 0.095)`
-- 6 个方块：绿 3（cell_1/3/5）+ 黄 3（cell_2/4/6），与 `GRIDS`/`CELLS` 一一对应
-- 分类规则：绿 → `bin_0`，黄 → `bin_1`
+- 6 个取物网格：`cell_1(0.190, 0.000)` `cell_2(0.095, 0.1645)` `cell_3(-0.095, 0.1645)`
+  `cell_4(-0.124, -0.144)` `cell_5(0.1645, 0.095)` `cell_6(-0.1645, 0.095)`
+- 6 个方块：绿 2 / 黄 2 / 红 1 / 蓝 1（cell_1 绿、cell_2 黄、cell_3 红、cell_4 蓝、cell_5 黄、cell_6 绿），与 `GRIDS`/`CELLS` 一一对应
+- 4 个料盒（中性灰，仅作放置位；类别由代码 `class_bin_map` 映射，与视觉无关）：绿 → `bin_0`、黄 → `bin_1`、红 → `bin_2`、蓝 → `bin_3`
 
 ### 链路（4 个节点 + 1 个 action）
 
 | 节点 | 输入 → 输出 | 作用 |
 |---|---|---|
-| `vision_classifier.py` | `/top_camera/image_raw` → `/detections` | HSV 颜色分割，输出检测框与类别；`max_area` 过滤料盒等大色块 |
+| `vision_classifier.py` | `/top_camera/image_raw` → `/detections` | 方案 C：轮廓法检测框 + 框内 HSV 颜色直方图分类（绿/黄/红/蓝）；料盒设中性灰被 is_colored 掩码排除，不与同色方块合并 |
 | `grid_mapper.py` | `/detections` → `/grid_detections` | 像素坐标经相机内参投影到桌面坐标，归入最近网格（俯视画面相对世界旋转 180°） |
 | `classify_task_node.py` | `/grid_detections` → 任务状态机 | 扫描 → 计划 → 逐个下发抓取目标；处理空网格 / 未识别 / 抓取失败（重试 1 次）|
 | `classify_grasp_server.py` | `ClassifyGrasp` action | 单次「抓取 → 搬运 → 放置」动作，复用实验二已验收的运动层 |
@@ -214,27 +214,28 @@ bash src/arm_grasp_sim/scripts/rm_offline_test.sh  ```
 ```bash
 source /opt/ros/humble/setup.bash
 source ~/arm_grasp_ws/install/setup.bash
+export DISPLAY=:0 LIBGL_ALWAYS_SOFTWARE=1 GALLIUM_DRIVER=llvmpipe   # WSL 软渲染：相机出图必须
 ros2 launch arm_grasp_sim classify_sim.launch.py
 ```
 
 全自动完成 6 个方块的识别与分类放置，无需人工干预。过程日志：`~/classify_logs/task_log.json`。
 
-### 验收结果（2026-09-11）
+### 验收结果（2026-09-12，连续两次 `ros2 launch arm_grasp_sim classify_sim.launch.py` 全自动验收）
 
 ```
-DONE placed=6 failed=0 skipped=0
+DONE placed=6 failed=0 skipped=0     # 两次复现一致, GRASP_MISSED=0
 ```
 
 | 网格 | 类别 | 目标料盒 | 距盒心 | 结果 |
 |---|---|---|---|---|
-| cell_1 | 绿 | bin_0 | 0.057 m | ✅ |
-| cell_3 | 绿 | bin_0 | 0.031 m | ✅ |
-| cell_5 | 绿 | bin_0 | 0.027 m | ✅ |
-| cell_2 | 黄 | bin_1 | 0.033 m | ✅ |
-| cell_4 | 黄 | bin_1 | 0.027 m | ✅ |
-| cell_6 | 黄 | bin_1 | 0.031 m | ✅ |
+| cell_1 | 绿 | bin_0 | 0.021 m | ✅ |
+| cell_2 | 黄 | bin_1 | 0.018 m | ✅ |
+| cell_3 | 红 | bin_2 | 0.013 m | ✅ |
+| cell_4 | 蓝 | bin_3 | 0.002 m | ✅ |
+| cell_5 | 黄 | bin_1 | 0.016 m | ✅ |
+| cell_6 | 绿 | bin_0 | 0.031 m | ✅ |
 
-**6/6 全部正确分类**，零失败、零重试；放置判定阈值为距盒心 < 0.07 m。视觉链路单独验证同为 6/6（6 个网格的类别全部识别正确）。
+**6/6 全部正确分类**，零失败、零重试；放置判定阈值为距盒心 < 0.07 m。四色各归其盒：绿→bin_0、黄→bin_1、红→bin_2、蓝→bin_3（绿/黄各 2 块，红/蓝各 1 块）。视觉链路单独验证同为 6/6（6 个网格类别全部识别正确）。第二次复现距离：cell_1 0.022 / cell_2 0.014 / cell_3 0.013 / cell_4 0.002 / cell_5 0.017 / cell_6 0.018 m，结果一致。
 
 ---
 
@@ -258,3 +259,7 @@ DONE placed=6 failed=0 skipped=0
 5. **搬运必须先把方块抬离桌面。** 贴着桌面拖行会把所有轴一起拖慢（yaw 实测从 0.62 rad/s 掉到 0.17 rad/s），导致放置全部超时失败。抬臂姿态 `Q_CARRY=(0.90, -0.30)`，TCP 高 0.11 m，方块底面悬空约 6.5 cm。
 
 6. **WSL 里起 gzserver 需要软渲染环境变量**：`DISPLAY=:0 LIBGL_ALWAYS_SOFTWARE=1 GALLIUM_DRIVER=llvmpipe`，否则相机完全不出图。
+
+7. **实验三料盒用中性灰、类别靠代码映射。** 早期用「同色料盒」做视觉提示，但俯视图像里同色方块会与同色料盒轮廓连成超大轮廓被 `max_area` 过滤，导致该色方块漏检（蓝块曾因此丢失）。改为料盒全设中性灰（S≈0，不进 `is_colored` 掩码），方块→料盒的映射完全由 `classify_task_node` 的 `class_bin_map` 决定，与视觉无关，4 色全部稳定检出。
+
+8. **抓取顺序必须确定性且 cell_1 优先。** cell_1 与 cell_2 相邻（中心距约 9 cm），若 cell_1 排最后处理，前序抓取/搬运会把 block_0 蹭飞 8~17 cm，导致夹空失败（曾长期卡在 5/6）。改为 `classify_task_node._plan` 按 cell 编号升序排队，block_0 在被触碰前即被抓走；同时 `classify_grasp_server` 把回程（LIFT_BIN 后）空夹爪先升到高位再转 yaw、接近段 `APPROACH_Z` 抬到 0.14，避免空夹爪在低高度旋转扫到桌面方块。两项叠加后稳定 6/6（连续两次复现）。

@@ -4,9 +4,9 @@
 把检测框中心(像素)映射到桌面取物网格编号 cell_1..cell_6, 发布 /grid_detections。
 
 世界->像素 标定表来自 table_grid_4c2b.world 的 desk_layout 模型几何:
-  cell_1 (0.190, 0.000)  cell_2 ( 0.095, 0.1645)
-  cell_3 (-0.095,0.1645) cell_4 (-0.190, 0.000)
-  cell_5 (0.1645,0.095)  cell_6 (-0.1645,0.095)
+  cell_1 ( 0.1785, 0.0650) cell_2 ( 0.1271, 0.1412)
+  cell_3 ( 0.0460, 0.1844) cell_4 (-0.0460, 0.1844)
+  cell_5 (-0.1271, 0.1412) cell_6 (-0.1785, 0.0650)
 相机 top_camera 位于 (0,0,1.0) 俯视, hfov=0.95rad, 800x640。
 投影关系(俯视, pitch=+90deg): u = cx + fx*y_w, v = cy + fy*x_w。
 如实际朝向不同, 改 swap_axes 参数即可, 不用重算。
@@ -26,12 +26,12 @@ from std_msgs.msg import String
 
 # 世界坐标网格中心(x,y), 与 world 文件一致
 CELLS = {
-    'cell_1': (0.190, 0.000),
-    'cell_2': (0.095, 0.1645),
-    'cell_3': (-0.095, 0.1645),
-    'cell_4': (-0.190, 0.000),
-    'cell_5': (0.1645, 0.0950),
-    'cell_6': (-0.1645, 0.0950),
+    'cell_1': (0.1785, 0.0650),
+    'cell_2': (0.1271, 0.1412),
+    'cell_3': (0.0460, 0.1844),
+    'cell_4': (-0.0460, 0.1844),
+    'cell_5': (-0.1271, 0.1412),
+    'cell_6': (-0.1785, 0.0650),
 }
 CELL_TOL = 0.075   # 网格半径(m), 0.16x0.10 格对角半径 ~0.094, 取 0.075 防重叠
 
@@ -105,8 +105,17 @@ class GridMapper(Node):
             score = float(d.results[0].hypothesis.score)
             u, v = d.bbox.center.position.x, d.bbox.center.position.y
             grid = self.pixel_to_grid(u, v)
+            # 反投影: 像素 -> 桌面世界坐标。抓取用"实测位置"而非固定格心 ——
+            # 前序抓取会把邻近方块碰歪, 按格心盲抓会夹空(曾致 cell_1 dist=0.452 失败)。
+            if self.swap:
+                wy = (self.cx - u) * self.cam_h / self.fx
+                wx = (self.cy - v) * self.cam_h / self.fy
+            else:
+                wx = (u - self.cx) * self.cam_h / self.fx
+                wy = (v - self.cy) * self.cam_h / self.fy
             out.append({'grid': grid, 'cls': cls, 'score': round(score, 3),
-                        'u': round(u, 1), 'v': round(v, 1)})
+                        'u': round(u, 1), 'v': round(v, 1),
+                        'x': round(wx, 4), 'y': round(wy, 4)})
         if out:
             m = String()
             m.data = json.dumps(out)

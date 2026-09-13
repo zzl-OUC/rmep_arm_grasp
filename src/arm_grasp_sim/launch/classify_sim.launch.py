@@ -31,13 +31,18 @@ from launch_ros.parameter_descriptions import ParameterValue
 # 6 个方块初始位姿(网格中心, 桌面高 0.025+块半高 0.02 = 0.045)
 # cell_1 绿, cell_2 黄, cell_3 绿, cell_4 黄, bin 留空; 覆盖 4 网格中 4 块 + 2 块放 cell_1/2 叠放边
 BLOCKS = [
-    # (x, y, class)  —— 与 GRIDS/CELLS 的 6 个网格中心一一对应(绿 3 / 黄 3)
-    (0.190, 0.000, 'green'),     # cell_1
-    (0.095, 0.1645, 'yellow'),   # cell_2
-    (-0.095, 0.1645, 'green'),   # cell_3
-    (-0.190, 0.000, 'yellow'),   # cell_4
-    (0.1645, 0.0950, 'green'),   # cell_5
-    (-0.1645, 0.0950, 'yellow'), # cell_6
+    # (x, y, class)  —— 与 GRIDS/CELLS 的 6 个网格中心一一对应
+    # 4 类颜色: 绿2 黄2 红1 蓝1, 便于验证 4 个料盒各归各类。
+    # 布局原则: (a) 每个色块远离同色料盒(避免轮廓法把料盒和方块合并成大轮廓);
+    #            (b) 网格方位需与料盒方位相隔 >=50 度 —— 否则下降抓取时夹爪会撞上料盒壁
+    #                (壁顶 0.075 > 抓取航点 z=0.065; 间隙需 > 盒半对角 0.076 + 夹爪半宽 0.03)。
+    #                旧布局 cell_4(229度)/cell_1(0度) 距最近料盒仅 0.086/0.128 -> 夹爪顶死, 6/6 退化为 3/6。
+    (0.1785, 0.0650, 'green'),     # cell_1 -> bin_0
+    (0.1271, 0.1412, 'yellow'),   # cell_2 -> bin_1
+    (0.0460, 0.1844, 'red'),     # cell_3 -> bin_2
+    (-0.0460, 0.1844, 'blue'),    # cell_4 -> bin_3
+    (-0.1271, 0.1412, 'yellow'),  # cell_5 -> bin_1
+    (-0.1785, 0.0650, 'green'),  # cell_6 -> bin_0
 ]
 
 
@@ -47,6 +52,12 @@ def generate_launch_description():
     urdf = PathJoinSubstitution([pkg_share, 'urdf', 'arm_grasp.urdf.xacro'])
     config = PathJoinSubstitution([pkg_share, 'config', 'controllers.yaml'])
     world = PathJoinSubstitution([pkg_share, 'worlds', 'table_grid_4c2b.world'])
+    BLOCK_URDF = {
+        'green': 'block.urdf',
+        'yellow': 'block_yellow.urdf',
+        'red': 'block_red.urdf',
+        'blue': 'block_blue.urdf',
+    }
     block_urdf_g = PathJoinSubstitution([pkg_share, 'urdf', 'block.urdf'])
     block_urdf_y = PathJoinSubstitution([pkg_share, 'urdf', 'block_yellow.urdf'])
 
@@ -94,7 +105,7 @@ def generate_launch_description():
     # 注: classify_grasp_server 的 block_name 参数对应第一个块; 其余块仅作视觉目标
     spawn_blocks = []
     for i, (x, y, cls) in enumerate(BLOCKS):
-        urdf = block_urdf_y if cls == 'yellow' else block_urdf_g
+        urdf = PathJoinSubstitution([pkg_share, 'urdf', BLOCK_URDF[cls]])
         spawn_blocks.append(Node(
             package='gazebo_ros', executable='spawn_entity.py',
             arguments=['-file', urdf, '-entity', 'block_%d' % i,

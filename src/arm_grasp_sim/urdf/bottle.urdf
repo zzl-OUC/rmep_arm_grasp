@@ -1,0 +1,36 @@
+<?xml version="1.0"?>
+<robot name="bottle" xmlns:xacro="http://www.ros.org/wiki/xacro">
+  <!-- 矿泉水瓶(矮化): φ6.5cm × 高10cm, 高饱和蓝, 质量 0.05kg。
+       几何: 瓶身圆柱(φ6.5,h8) + 瓶颈圆柱(φ3,h2), link 原点=瓶身中心。
+       视觉: 高饱和蓝 (OpenCV H≈110), 落入 bottle 色带 (95,130)。 -->
+  <link name="bottle">
+    <visual>
+      <geometry><cylinder radius="0.0325" length="0.08"/></geometry>
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <material name="bottle_blue"><color rgba="0.10 0.35 0.85 1"/></material>
+    </visual>
+    <visual>
+      <geometry><cylinder radius="0.015" length="0.02"/></geometry>
+      <origin xyz="0 0 0.05" rpy="0 0 0"/>
+      <material name="bottle_cap"><color rgba="0.10 0.35 0.85 1"/></material>
+    </visual>
+    <!-- 碰撞体用 box 近似(0.065×0.065×0.10 外接盒): 指面-平面接触稳定,
+         圆柱面线接触会把瓶挤出弹飞(实测 z 飞到 -14619) -->
+    <collision>
+      <geometry><box size="0.065 0.065 0.10"/></geometry>
+      <origin xyz="0 0 0.0" rpy="0 0 0"/>
+    </collision>
+    <inertial>
+      <mass value="0.05"/>
+      <inertia ixx="0.000040" ixy="0" ixz="0" iyy="0.000040" iyz="0" izz="0.000026"/>
+    </inertial>
+  </link>
+  <gazebo reference="bottle">
+    <material>Gazebo/Blue</material>
+    <mu1>2.0</mu1>
+    <mu2>2.0</mu2>
+    <kp>1e6</kp>
+    <kd>1</kd>
+    <minDepth>0.00001</minDepth>
+  </gazebo>
+</robot>

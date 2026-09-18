@@ -1,0 +1,47 @@
+<?xml version="1.0"?>
+<robot name="tennis" xmlns:xacro="http://www.ros.org/wiki/xacro">
+  <!-- 网球: φ6.6cm (r=0.033), 荧光黄绿, 质量 0.057kg (真实网球 56~59g)。
+       视觉: 高饱和黄绿色 (OpenCV H≈28), 落入 tennis_ball 色带 (18,45)。 -->
+  <link name="tennis">
+    <visual>
+      <geometry><sphere radius="0.033"/></geometry>
+      <material name="fluorescent_yellow_green"><color rgba="0.85 0.80 0.10 1"/></material>
+    </visual>
+    <!-- 碰撞体改回球体(与视觉一致, r=0.033)。
+         为什么放弃 box 近似: box 面-面接触看似稳定, 但指面只有 45x40mm、小于
+         球的 66x66mm 侧面, 指面只压住球侧面的一部分, 接触合力作用点偏离球质心
+         (沿夹爪 x 向偏 10mm / 竖向偏 6mm), 对质心产生绕 y 轴(夹紧轴)的力矩:
+         实测球被夹起后四元数 qy 从 0 一路转到 -0.707(绕 y 轴 -90 度), 像拨轮
+         一样自旋, 自旋后沿指面螺旋上爬(球心相对 TCP 从 +0.009 升到 +0.089),
+         越过指面顶边即脱出。把指面前移 10mm 对齐质心后自旋只从 -90 度降到
+         -59 度, 仍会脱出 —— 说明根因是"接触合力偏离质心"而非单纯的偏移量。
+         球体碰撞的接触法线恒过球心: 两指法向力对质心的力矩恒为 0, 竖向摩擦
+         力在左右两个接触点产生的力矩大小相等方向相反也相互抵消, 因此球不会
+         被夹持力矩驱动自旋, 也就不存在螺旋爬出。
+         (旧注里"球面点接触会把球挤出弹飞"是 kp=1e6 过硬 + kd=1 欠阻尼造成的
+          数值爆炸, 不是球几何本身的问题 —— 本次同步把 kp 降到 2e4、kd 提到 10,
+          见下方 gazebo 标签注释。) -->
+    <collision>
+      <geometry><sphere radius="0.033"/></geometry>
+    </collision>
+    <inertial>
+      <mass value="0.057"/>
+      <inertia ixx="0.000025" ixy="0" ixz="0" iyy="0.000025" iyz="0" izz="0.000025"/>
+    </inertial>
+  </link>
+  <gazebo reference="tennis">
+    <material>Gazebo/Yellow</material>
+    <mu1>2.0</mu1>
+    <mu2>2.0</mu2>
+    <!-- 接触参数与指面(left/right_finger_link)取一致: kp=1e5, kd=10, minDepth=1e-4。
+         原 kp=1e6 / kd=1 是离群值: 球质量仅 0.057kg, kp=1e6 时接触模态频率
+         sqrt(kp/m)=4189rad/s(667Hz), 在 1ms 步长(1kHz)下欠采样 -> 接触数值爆炸
+         (旧版实测球 z 飞到 -12603)。kd=1 欠阻尼则让接触持续抖动。
+         也不要过软: 曾试 kp=2e4 + 30N 夹持, 侵入量达 30/2e4=1.5mm,
+         求解器把球猛推出去(实测 dist=11.4m)。取与指面相同的 1e5 后,
+         18N 下侵入量仅 0.18mm, 接触刚而不炸。 -->
+    <kp>1e5</kp>
+    <kd>10</kd>
+    <minDepth>0.0001</minDepth>
+  </gazebo>
+</robot>

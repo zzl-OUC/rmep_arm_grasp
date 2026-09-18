@@ -1,13 +1,18 @@
 <?xml version="1.0"?>
 <sdf version="1.7">
   <!-- ============================================================
-       实验3 桌面分类场景（自动生成，勿手改）
-       生成脚本：exp3_reach/build_world.py
-       布局：6 个取物网格 + 4 个分类料盒
-             网格 r=19.0cm(0/30/60/120/150/180deg), 料盒 r=22.5cm(210/250/290/330deg)
+       实验3 桌面分类场景（网球 + 矿泉水瓶版）
+       布局：6 个取物网格(全向) + 2 个分类料盒(正左瓶盒/正右球盒)
+       网格 r=0.185(轴向4 + 对角4取6):
+         cell_1 正前(0.185,0) 球 | cell_2 左前(0.131,0.131) 瓶
+         cell_3 右前(0.131,-0.131) 瓶 | cell_4 正后(-0.185,0) 瓶
+         cell_5 左后(-0.131,0.131) 球 | cell_6 右后(-0.131,-0.131) 球
+       料盒 r=0.21(3面墙, 开口朝中心):
+         bin_0 (0, 0.24) 瓶盒(正左) | bin_1 (0, -0.24) 球盒(正右)
        依据：可达圆环 r ∈ [14.46, 25.64] cm（reach_analysis.py 实测）
        注意：桌面本体由 URDF 的 table_link 提供（1.0 x 0.8 m，顶面 z=+0.025），
              本 world 不再重复建桌面，只摆放网格与料盒。
+       料盒中性灰(S≈0): 不进 is_colored 掩码, 不与物体轮廓合并。
        ============================================================ -->
   <world name="table_grid">
     <gui>
@@ -40,8 +45,9 @@
   <model name="desk_layout">
     <static>true</static>
     <pose frame="">0 0 0 0 0 0</pose>
+    <!-- 6 取物网格: 0.09x0.09 薄板, 面向圆心 -->
     <link name="cell_1">
-      <pose frame="">0.1785 0.0650 0.0270 0 0 0.3491</pose>
+      <pose frame="">0.1850 0.0000 0.0270 0 0 0.0000</pose>
       <collision name="cell_1_col">
         <geometry><box><size>0.09 0.09 0.004</size></box></geometry>
         <surface><friction><ode><mu>1.0</mu><mu2>1.0</mu2></ode></friction></surface>
@@ -52,7 +58,7 @@
       </visual>
     </link>
     <link name="cell_2">
-      <pose frame="">0.1271 0.1412 0.0270 0 0 0.8378</pose>
+      <pose frame="">0.1310 0.1310 0.0270 0 0 0.7854</pose>
       <collision name="cell_2_col">
         <geometry><box><size>0.09 0.09 0.004</size></box></geometry>
         <surface><friction><ode><mu>1.0</mu><mu2>1.0</mu2></ode></friction></surface>
@@ -63,7 +69,7 @@
       </visual>
     </link>
     <link name="cell_3">
-      <pose frame="">0.0460 0.1844 0.0270 0 0 1.3265</pose>
+      <pose frame="">0.1310 -0.1310 0.0270 0 0 -0.7854</pose>
       <collision name="cell_3_col">
         <geometry><box><size>0.09 0.09 0.004</size></box></geometry>
         <surface><friction><ode><mu>1.0</mu><mu2>1.0</mu2></ode></friction></surface>
@@ -74,7 +80,7 @@
       </visual>
     </link>
     <link name="cell_4">
-      <pose frame="">-0.0460 0.1844 0.0270 0 0 1.8151</pose>
+      <pose frame="">-0.1850 0.0000 0.0270 0 0 3.1416</pose>
       <collision name="cell_4_col">
         <geometry><box><size>0.09 0.09 0.004</size></box></geometry>
         <surface><friction><ode><mu>1.0</mu><mu2>1.0</mu2></ode></friction></surface>
@@ -85,7 +91,7 @@
       </visual>
     </link>
     <link name="cell_5">
-      <pose frame="">-0.1271 0.1412 0.0270 0 0 2.3038</pose>
+      <pose frame="">-0.1310 0.1310 0.0270 0 0 2.3562</pose>
       <collision name="cell_5_col">
         <geometry><box><size>0.09 0.09 0.004</size></box></geometry>
         <surface><friction><ode><mu>1.0</mu><mu2>1.0</mu2></ode></friction></surface>
@@ -96,7 +102,7 @@
       </visual>
     </link>
     <link name="cell_6">
-      <pose frame="">-0.1785 0.0650 0.0270 0 0 2.7925</pose>
+      <pose frame="">-0.1310 -0.1310 0.0270 0 0 -2.3562</pose>
       <collision name="cell_6_col">
         <geometry><box><size>0.09 0.09 0.004</size></box></geometry>
         <surface><friction><ode><mu>1.0</mu><mu2>1.0</mu2></ode></friction></surface>
@@ -106,211 +112,109 @@
         <material><ambient>0.70 0.74 0.80 1</ambient><diffuse>0.70 0.74 0.80 1</diffuse></material>
       </visual>
     </link>
-      <!-- bin_0 (210.0 deg, r=0.225) -->
+    <!-- bin_0 瓶盒(正左, r=0.24): 4 面墙, 内净 0.21x0.08。外移到 r=0.24 是为了让近墙(内壁 y=0.20)避开对角格张开指盒的 y 扫掠(最大 0.1865) -->
     <link name="bin_0_base">
-      <pose frame="">-0.1949 -0.1125 0.0280 0 0 5.2360</pose>
+      <pose frame="">0.0000 0.2400 0.0280 0 0 0.0000</pose>
       <collision name="bin_0_base_col">
-        <geometry><box><size>0.130 0.080 0.006</size></box></geometry>
+        <geometry><box><size>0.21 0.08 0.006</size></box></geometry>
       </collision>
       <visual name="bin_0_base_vis">
-        <geometry><box><size>0.130 0.080 0.006</size></box></geometry>
+        <geometry><box><size>0.21 0.08 0.006</size></box></geometry>
         <material><ambient>0.45 0.45 0.45 1</ambient><diffuse>0.45 0.45 0.45 1</diffuse></material>
       </visual>
     </link>
-    <link name="bin_0_wall_a">
-      <pose frame="">-0.1636 -0.1666 0.0500 0 0 5.2360</pose>
-      <collision name="bin_0_wall_a_col">
-        <geometry><box><size>0.005 0.080 0.050</size></box></geometry>
+    <link name="bin_0_wall_far">
+      <pose frame="">0.0000 0.2800 0.0500 0 0 0.0000</pose>
+      <collision name="bin_0_wall_far_col">
+        <geometry><box><size>0.21 0.005 0.05</size></box></geometry>
       </collision>
-      <visual name="bin_0_wall_a_vis">
-        <geometry><box><size>0.005 0.080 0.050</size></box></geometry>
+      <visual name="bin_0_wall_far_vis">
+        <geometry><box><size>0.21 0.005 0.05</size></box></geometry>
         <material><ambient>0.45 0.45 0.45 1</ambient><diffuse>0.45 0.45 0.45 1</diffuse></material>
       </visual>
     </link>
-    <link name="bin_0_wall_b">
-      <pose frame="">-0.2261 -0.0584 0.0500 0 0 5.2360</pose>
-      <collision name="bin_0_wall_b_col">
-        <geometry><box><size>0.005 0.080 0.050</size></box></geometry>
+    <link name="bin_0_wall_xa">
+      <pose frame="">0.1050 0.2400 0.0500 0 0 0.0000</pose>
+      <collision name="bin_0_wall_xa_col">
+        <geometry><box><size>0.005 0.08 0.05</size></box></geometry>
       </collision>
-      <visual name="bin_0_wall_b_vis">
-        <geometry><box><size>0.005 0.080 0.050</size></box></geometry>
+      <visual name="bin_0_wall_xa_vis">
+        <geometry><box><size>0.005 0.08 0.05</size></box></geometry>
         <material><ambient>0.45 0.45 0.45 1</ambient><diffuse>0.45 0.45 0.45 1</diffuse></material>
       </visual>
     </link>
-    <link name="bin_0_wall_c">
-      <pose frame="">-0.1624 -0.0938 0.0500 0 0 5.2360</pose>
-      <collision name="bin_0_wall_c_col">
-        <geometry><box><size>0.130 0.005 0.050</size></box></geometry>
+    <link name="bin_0_wall_xb">
+      <pose frame="">-0.1050 0.2400 0.0500 0 0 0.0000</pose>
+      <collision name="bin_0_wall_xb_col">
+        <geometry><box><size>0.005 0.08 0.05</size></box></geometry>
       </collision>
-      <visual name="bin_0_wall_c_vis">
-        <geometry><box><size>0.130 0.005 0.050</size></box></geometry>
+      <visual name="bin_0_wall_xb_vis">
+        <geometry><box><size>0.005 0.08 0.05</size></box></geometry>
         <material><ambient>0.45 0.45 0.45 1</ambient><diffuse>0.45 0.45 0.45 1</diffuse></material>
       </visual>
     </link>
-    <link name="bin_0_wall_d">
-      <pose frame="">-0.2273 -0.1313 0.0500 0 0 5.2360</pose>
-      <collision name="bin_0_wall_d_col">
-        <geometry><box><size>0.130 0.005 0.050</size></box></geometry>
+    <link name="bin_0_wall_near">
+      <pose frame="">0.0000 0.2000 0.0500 0 0 0.0000</pose>
+      <collision name="bin_0_wall_near_col">
+        <geometry><box><size>0.21 0.005 0.05</size></box></geometry>
       </collision>
-      <visual name="bin_0_wall_d_vis">
-        <geometry><box><size>0.130 0.005 0.050</size></box></geometry>
-        <material><ambient>0.45 0.45 0.45 1</ambient><diffuse>0.45 0.45 0.45 1</diffuse></material>
+      <visual name="bin_0_wall_near_vis">
+        <geometry><box><size>0.21 0.005 0.05</size></box></geometry>
+        <material><ambient>0.55 0.55 0.55 1</ambient><diffuse>0.55 0.55 0.55 1</diffuse></material>
       </visual>
     </link>
-    <!-- bin_1 (250.0 deg, r=0.225) -->
+    <!-- bin_1 球盒(正右, r=0.24): 4 面墙, 内净 0.21x0.08。外移原因同 bin_0 -->
     <link name="bin_1_base">
-      <pose frame="">-0.0770 -0.2114 0.0280 0 0 5.9341</pose>
+      <pose frame="">0.0000 -0.2400 0.0280 0 0 0.0000</pose>
       <collision name="bin_1_base_col">
-        <geometry><box><size>0.130 0.080 0.006</size></box></geometry>
+        <geometry><box><size>0.21 0.08 0.006</size></box></geometry>
       </collision>
       <visual name="bin_1_base_vis">
-        <geometry><box><size>0.130 0.080 0.006</size></box></geometry>
+        <geometry><box><size>0.21 0.08 0.006</size></box></geometry>
         <material><ambient>0.55 0.55 0.55 1</ambient><diffuse>0.55 0.55 0.55 1</diffuse></material>
       </visual>
     </link>
-    <link name="bin_1_wall_a">
-      <pose frame="">-0.0182 -0.2328 0.0500 0 0 5.9341</pose>
-      <collision name="bin_1_wall_a_col">
-        <geometry><box><size>0.005 0.080 0.050</size></box></geometry>
+    <link name="bin_1_wall_far">
+      <pose frame="">0.0000 -0.2800 0.0500 0 0 0.0000</pose>
+      <collision name="bin_1_wall_far_col">
+        <geometry><box><size>0.21 0.005 0.05</size></box></geometry>
       </collision>
-      <visual name="bin_1_wall_a_vis">
-        <geometry><box><size>0.005 0.080 0.050</size></box></geometry>
+      <visual name="bin_1_wall_far_vis">
+        <geometry><box><size>0.21 0.005 0.05</size></box></geometry>
         <material><ambient>0.55 0.55 0.55 1</ambient><diffuse>0.55 0.55 0.55 1</diffuse></material>
       </visual>
     </link>
-    <link name="bin_1_wall_b">
-      <pose frame="">-0.1357 -0.1901 0.0500 0 0 5.9341</pose>
-      <collision name="bin_1_wall_b_col">
-        <geometry><box><size>0.005 0.080 0.050</size></box></geometry>
+    <link name="bin_1_wall_xa">
+      <pose frame="">0.1050 -0.2400 0.0500 0 0 0.0000</pose>
+      <collision name="bin_1_wall_xa_col">
+        <geometry><box><size>0.005 0.08 0.05</size></box></geometry>
       </collision>
-      <visual name="bin_1_wall_b_vis">
-        <geometry><box><size>0.005 0.080 0.050</size></box></geometry>
+      <visual name="bin_1_wall_xa_vis">
+        <geometry><box><size>0.005 0.08 0.05</size></box></geometry>
         <material><ambient>0.55 0.55 0.55 1</ambient><diffuse>0.55 0.55 0.55 1</diffuse></material>
       </visual>
     </link>
-    <link name="bin_1_wall_c">
-      <pose frame="">-0.0641 -0.1762 0.0500 0 0 5.9341</pose>
-      <collision name="bin_1_wall_c_col">
-        <geometry><box><size>0.130 0.005 0.050</size></box></geometry>
+    <link name="bin_1_wall_xb">
+      <pose frame="">-0.1050 -0.2400 0.0500 0 0 0.0000</pose>
+      <collision name="bin_1_wall_xb_col">
+        <geometry><box><size>0.005 0.08 0.05</size></box></geometry>
       </collision>
-      <visual name="bin_1_wall_c_vis">
-        <geometry><box><size>0.130 0.005 0.050</size></box></geometry>
+      <visual name="bin_1_wall_xb_vis">
+        <geometry><box><size>0.005 0.08 0.05</size></box></geometry>
         <material><ambient>0.55 0.55 0.55 1</ambient><diffuse>0.55 0.55 0.55 1</diffuse></material>
       </visual>
     </link>
-    <link name="bin_1_wall_d">
-      <pose frame="">-0.0898 -0.2467 0.0500 0 0 5.9341</pose>
-      <collision name="bin_1_wall_d_col">
-        <geometry><box><size>0.130 0.005 0.050</size></box></geometry>
+    <link name="bin_1_wall_near">
+      <pose frame="">0.0000 -0.2000 0.0500 0 0 0.0000</pose>
+      <collision name="bin_1_wall_near_col">
+        <geometry><box><size>0.21 0.005 0.05</size></box></geometry>
       </collision>
-      <visual name="bin_1_wall_d_vis">
-        <geometry><box><size>0.130 0.005 0.050</size></box></geometry>
+      <visual name="bin_1_wall_near_vis">
+        <geometry><box><size>0.21 0.005 0.05</size></box></geometry>
         <material><ambient>0.55 0.55 0.55 1</ambient><diffuse>0.55 0.55 0.55 1</diffuse></material>
       </visual>
     </link>
-    <!-- bin_2 (290.0 deg, r=0.225) -->
-    <link name="bin_2_base">
-      <pose frame="">0.0770 -0.2114 0.0280 0 0 6.6323</pose>
-      <collision name="bin_2_base_col">
-        <geometry><box><size>0.130 0.080 0.006</size></box></geometry>
-      </collision>
-      <visual name="bin_2_base_vis">
-        <geometry><box><size>0.130 0.080 0.006</size></box></geometry>
-        <material><ambient>0.65 0.65 0.65 1</ambient><diffuse>0.65 0.65 0.65 1</diffuse></material>
-      </visual>
-    </link>
-    <link name="bin_2_wall_a">
-      <pose frame="">0.1357 -0.1901 0.0500 0 0 6.6323</pose>
-      <collision name="bin_2_wall_a_col">
-        <geometry><box><size>0.005 0.080 0.050</size></box></geometry>
-      </collision>
-      <visual name="bin_2_wall_a_vis">
-        <geometry><box><size>0.005 0.080 0.050</size></box></geometry>
-        <material><ambient>0.65 0.65 0.65 1</ambient><diffuse>0.65 0.65 0.65 1</diffuse></material>
-      </visual>
-    </link>
-    <link name="bin_2_wall_b">
-      <pose frame="">0.0182 -0.2328 0.0500 0 0 6.6323</pose>
-      <collision name="bin_2_wall_b_col">
-        <geometry><box><size>0.005 0.080 0.050</size></box></geometry>
-      </collision>
-      <visual name="bin_2_wall_b_vis">
-        <geometry><box><size>0.005 0.080 0.050</size></box></geometry>
-        <material><ambient>0.65 0.65 0.65 1</ambient><diffuse>0.65 0.65 0.65 1</diffuse></material>
-      </visual>
-    </link>
-    <link name="bin_2_wall_c">
-      <pose frame="">0.0641 -0.1762 0.0500 0 0 6.6323</pose>
-      <collision name="bin_2_wall_c_col">
-        <geometry><box><size>0.130 0.005 0.050</size></box></geometry>
-      </collision>
-      <visual name="bin_2_wall_c_vis">
-        <geometry><box><size>0.130 0.005 0.050</size></box></geometry>
-        <material><ambient>0.65 0.65 0.65 1</ambient><diffuse>0.65 0.65 0.65 1</diffuse></material>
-      </visual>
-    </link>
-    <link name="bin_2_wall_d">
-      <pose frame="">0.0898 -0.2467 0.0500 0 0 6.6323</pose>
-      <collision name="bin_2_wall_d_col">
-        <geometry><box><size>0.130 0.005 0.050</size></box></geometry>
-      </collision>
-      <visual name="bin_2_wall_d_vis">
-        <geometry><box><size>0.130 0.005 0.050</size></box></geometry>
-        <material><ambient>0.65 0.65 0.65 1</ambient><diffuse>0.65 0.65 0.65 1</diffuse></material>
-      </visual>
-    </link>
-    <!-- bin_3 (330.0 deg, r=0.225) -->
-    <link name="bin_3_base">
-      <pose frame="">0.1949 -0.1125 0.0280 0 0 7.3304</pose>
-      <collision name="bin_3_base_col">
-        <geometry><box><size>0.130 0.080 0.006</size></box></geometry>
-      </collision>
-      <visual name="bin_3_base_vis">
-        <geometry><box><size>0.130 0.080 0.006</size></box></geometry>
-        <material><ambient>0.75 0.75 0.75 1</ambient><diffuse>0.75 0.75 0.75 1</diffuse></material>
-      </visual>
-    </link>
-    <link name="bin_3_wall_a">
-      <pose frame="">0.2261 -0.0584 0.0500 0 0 7.3304</pose>
-      <collision name="bin_3_wall_a_col">
-        <geometry><box><size>0.005 0.080 0.050</size></box></geometry>
-      </collision>
-      <visual name="bin_3_wall_a_vis">
-        <geometry><box><size>0.005 0.080 0.050</size></box></geometry>
-        <material><ambient>0.75 0.75 0.75 1</ambient><diffuse>0.75 0.75 0.75 1</diffuse></material>
-      </visual>
-    </link>
-    <link name="bin_3_wall_b">
-      <pose frame="">0.1636 -0.1666 0.0500 0 0 7.3304</pose>
-      <collision name="bin_3_wall_b_col">
-        <geometry><box><size>0.005 0.080 0.050</size></box></geometry>
-      </collision>
-      <visual name="bin_3_wall_b_vis">
-        <geometry><box><size>0.005 0.080 0.050</size></box></geometry>
-        <material><ambient>0.75 0.75 0.75 1</ambient><diffuse>0.75 0.75 0.75 1</diffuse></material>
-      </visual>
-    </link>
-    <link name="bin_3_wall_c">
-      <pose frame="">0.1624 -0.0938 0.0500 0 0 7.3304</pose>
-      <collision name="bin_3_wall_c_col">
-        <geometry><box><size>0.130 0.005 0.050</size></box></geometry>
-      </collision>
-      <visual name="bin_3_wall_c_vis">
-        <geometry><box><size>0.130 0.005 0.050</size></box></geometry>
-        <material><ambient>0.75 0.75 0.75 1</ambient><diffuse>0.75 0.75 0.75 1</diffuse></material>
-      </visual>
-    </link>
-    <link name="bin_3_wall_d">
-      <pose frame="">0.2273 -0.1313 0.0500 0 0 7.3304</pose>
-      <collision name="bin_3_wall_d_col">
-        <geometry><box><size>0.130 0.005 0.050</size></box></geometry>
-      </collision>
-      <visual name="bin_3_wall_d_vis">
-        <geometry><box><size>0.130 0.005 0.050</size></box></geometry>
-        <material><ambient>0.75 0.75 0.75 1</ambient><diffuse>0.75 0.75 0.75 1</diffuse></material>
-      </visual>
-    </link>
-</model>
+  </model>
 
   <model name="top_camera">
     <static>true</static>
@@ -335,6 +239,23 @@
           <frame_name>top_camera_optical_frame</frame_name>
         </plugin>
       </sensor>
+    </link>
+  </model>
+
+  <!-- EP 车身（静态可视化，红色；仅 visual 无 collision，不影响已验证物理） -->
+  <model name="ep_car_body">
+    <static>true</static>
+    <pose frame="">0 0 0.105 0 0 0</pose>
+    <link name="ep_car_body_link">
+      <visual name="ep_car_body_vis">
+        <geometry><box><size>0.24 0.24 0.10</size></box></geometry>
+        <material>
+          <script>
+            <uri>file://media/materials/scripts/gazebo.material</uri>
+            <name>Gazebo/DarkGrey</name>
+          </script>
+        </material>
+      </visual>
     </link>
   </model>
   </world>

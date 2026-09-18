@@ -293,20 +293,35 @@ RoboMaster EP 工程机器人（底盘+机械臂+机械爪）抓取仿真模型
   <joint name="gripper_left_joint" type="prismatic">
     <parent link="gripper_link"/>
     <child link="left_finger_link"/>
-    <origin xyz="0.048 0 -0.0296" rpy="0 0 0"/>
+    <!-- x 由 0.048 前移到 0.058，使指盒中心落在被夹物质心上，见左指注释 -->
+    <origin xyz="0.058 0 -0.0296" rpy="0 0 0"/>
     <axis xyz="0 1 0"/>
     <limit effort="150" velocity="0.05" lower="0.0" upper="0.040"/>
     <dynamics damping="0.5" friction="0.2"/>
   </joint>
   <link name="left_finger_link">
+    <!-- 指面（指盒）沿夹爪 x 轴前移 10mm：关节原点 x 由 0.048 改为 0.058。
+         根因：网球 φ0.066 被夹时指盒 x 跨度 0.045 只覆盖球的后半段，
+         指盒中心比球质心靠内 10mm，竖向支承摩擦力作用在质心后方 10mm 处，
+         对质心产生绕 y 轴（夹爪夹紧轴）的力矩，球像拨轮一样自旋
+         （实测四元数 qy 从 0 转到 -0.707，即绕 y 轴 -90°），自旋后沿指面
+         螺旋上爬直至挤出指间。前移后指盒中心正好落在被夹物质心上，力臂归零。
+         指盒中心到 TCP 的距离变为 0.066，正好等于 TCP_LEAD，与既有约定一致。
+         指盒同时在 z 向加高：由 0.04 加高到 0.07，只向上延伸（底边仍为
+         TCP-0.0106，桌面与料盒壁净空不变）。原因是搬运途中球会相对指面缓慢
+         上滑，实测球心升到 TCP+0.0397，已越过原指面顶边 TCP+0.0294，球改成骑在
+         指面顶棱上（棱接触不稳），随即持续自旋并甩出。加高后指面顶边为
+         TCP+0.0594，球心要上滑 5cm 才会骑到顶棱，笼住球。
+         注意本文件注释只能用全角标点：robot_description 是作为 ros2 的 param
+         覆盖规则交给插件解析的，半角逗号冒号双引号会让 rcl 参数解析失败。 -->
     <visual>
-      <origin xyz="0 -0.05 0" rpy="0 0 0"/>
-      <geometry><box size="0.045 0.012 0.04"/></geometry>
+      <origin xyz="0 -0.05 0.015" rpy="0 0 0"/>
+      <geometry><box size="0.045 0.012 0.07"/></geometry>
       <material name="EP_up.001"/>
     </visual>
     <collision>
-      <origin xyz="0 -0.05 0" rpy="0 0 0"/>
-      <geometry><box size="0.045 0.012 0.04"/></geometry>
+      <origin xyz="0 -0.05 0.015" rpy="0 0 0"/>
+      <geometry><box size="0.045 0.012 0.07"/></geometry>
     </collision>
     <inertial>
       <mass value="0.05"/>
@@ -317,20 +332,22 @@ RoboMaster EP 工程机器人（底盘+机械臂+机械爪）抓取仿真模型
   <joint name="gripper_right_joint" type="prismatic">
     <parent link="gripper_link"/>
     <child link="right_finger_link"/>
-    <origin xyz="0.048 0 -0.0296" rpy="0 0 0"/>
+    <!-- 与左指同步前移到 0.058 -->
+    <origin xyz="0.058 0 -0.0296" rpy="0 0 0"/>
     <axis xyz="0 -1 0"/>
     <limit effort="150" velocity="0.05" lower="0.0" upper="0.040"/>
     <dynamics damping="0.5" friction="0.2"/>
   </joint>
   <link name="right_finger_link">
+    <!-- 与左指对称，指盒随关节原点前移 10mm 并加高到 0.07，见左指注释。 -->
     <visual>
-      <origin xyz="0 0.05 0" rpy="0 0 0"/>
-      <geometry><box size="0.045 0.012 0.04"/></geometry>
+      <origin xyz="0 0.05 0.015" rpy="0 0 0"/>
+      <geometry><box size="0.045 0.012 0.07"/></geometry>
       <material name="EP_up.001"/>
     </visual>
     <collision>
-      <origin xyz="0 0.05 0" rpy="0 0 0"/>
-      <geometry><box size="0.045 0.012 0.04"/></geometry>
+      <origin xyz="0 0.05 0.015" rpy="0 0 0"/>
+      <geometry><box size="0.045 0.012 0.07"/></geometry>
     </collision>
     <inertial>
       <mass value="0.05"/>

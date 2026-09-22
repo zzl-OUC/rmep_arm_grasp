@@ -58,10 +58,13 @@ except Exception:  # 仲裁模块缺失时不影响主链路
         return True
 
 # ---- 2 类色相边界(OpenCV hue ∈ [0,179]); 本实验物体为网球/矿泉水瓶两类 ----
-#   tennis_ball(荧光黄绿): 18-45    bottle(高饱和蓝): 95-130
+#   tennis_ball(荧光黄绿): 15-78    bottle(高饱和蓝): 95-130
 #   其余色相(红等)与 背景/白色/灰(S 低或 V 过亮) 均不计入颜色像素。
+#   注: tennis.sdf diffuse=(0.85,0.80,0.10) 渲染 hue≈56, 旧边界 (18,45) 会把网球
+#   判成 unknown(被下游 skipped_unknown), 故拓宽到 (15,78) 覆盖黄绿荧光网球;
+#   与 bottle(95,130) 之间留 78-95 的绿/青 guard band, 本场景无此色物体, 安全。
 HUE_BOUNDS = {
-    'tennis_ball': ((18, 45),),
+    'tennis_ball': ((15, 78),),
     'bottle':      ((95, 130),),
 }
 
@@ -75,7 +78,7 @@ UNKNOWN_CLASS = 'unknown'
 
 def class_of_hue(h):
     """单像素色相 -> 类名(已在调用处过滤低饱和/过亮)。None 表示非本实验类别。"""
-    if 18 <= h < 45:
+    if 15 <= h < 78:
         return 'tennis_ball'
     if 95 <= h < 130:
         return 'bottle'
@@ -91,17 +94,19 @@ def is_colored(s, v):
     return (s > 40) & (v > 30)
 
 
-def detect_boxes_contour(hsv, min_area=80, max_area=6000):
+def detect_boxes_contour(hsv, min_area=80, max_area=8000):
     """轮廓法: 任意饱和色块 -> 外接框。返回 [(x, y, w, h), ...]。
 
-    max_area 6000: 矿泉水瓶(φ6.5cm×h10cm) 俯视投影约 50x77px ≈ 3850px²,
-    原 4000 上限余量不足; 料盒为中性灰(S≈0)不进掩码, 提高上限无副作用。
+    max_area 8000: 单个物体俯视投影约 2000px²(球 φ6.6cm / 瓶 φ6.5cm 顶面),
+    留足余量; 6 个取物格在可达前弧内密集排布(格心间距 ~7.4cm -> 像空间 ~10px 间隙),
+    若 CLOSE 核过大, 相邻物体的彩色掩码会被连成一块 -> 面积超上限被整块丢弃
+    (曾致 0 检出回归)。故 CLOSE 核用 3x3(只填 <=1px 的断裂), 相邻物体保持分离。
     """
     s = hsv[:, :, 1]
     v = hsv[:, :, 2]
     mask = is_colored(s, v).astype(np.uint8) * 255
-    mask = cv2.morphologyEx(mask, cv2.MORPH_OPEN, np.ones((5, 5), np.uint8))
-    mask = cv2.morphologyEx(mask, cv2.MORPH_CLOSE, np.ones((9, 9), np.uint8))
+    mask = cv2.morphologyEx(mask, cv2.MORPH_OPEN, np.ones((3, 3), np.uint8))
+    mask = cv2.morphologyEx(mask, cv2.MORPH_CLOSE, np.ones((3, 3), np.uint8))
     cnts, _ = cv2.findContours(mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
     boxes = []
     for c in cnts:
@@ -391,7 +396,7 @@ def _ros_main():
             self.declare_parameter('image_topic', '/top_camera/image_raw')
             self.declare_parameter('out_topic', '/detections')
             self.declare_parameter('min_area', 80)
-            self.declare_parameter('max_area', 6000)
+            self.declare_parameter('max_area', 8000)
             self.declare_parameter('use_yolo', False)
             self.declare_parameter('yolo_weights', '')
             self.declare_parameter('yolo_conf', 0.25)

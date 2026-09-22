@@ -1,0 +1,15 @@
+=== /grid_detections (视觉反投影世界坐标) ===
+  grid=cell_4   cls=bottle         score=1.000  u=400.0  v=477.5   x=-0.2025   y=0.0      
+  grid=cell_2   cls=bottle         score=1.000  u=287.0  v=207.5   x=0.1446    y=0.1453   
+  grid=cell_3   cls=bottle         score=1.000  u=512.5  v=207.0   x=0.1453    y=-0.1446  
+  grid=cell_1   cls=tennis_ball    score=1.000  u=411.5  v=162.0   x=0.2031    y=-0.0148  
+=== /detections (4) ===
+  bottle         score=1.000  cx=400 cy=478
+  bottle         score=1.000  cx=287 cy=208
+  bottle         score=1.000  cx=512 cy=207
+  tennis_ball    score=1.000  cx=412 cy=162
+=== /vision_debug ===
+  box=[371, 443, 58, 69] class=bottle dom_hue=120 votes={'bottle': 3198} score=1.0 reason=None
+  box=[255, 176, 64, 63] class=bottle dom_hue=120 votes={'bottle': 2402} score=1.0 reason=None
+  box=[481, 175, 63, 64] class=bottle dom_hue=120 votes={'bottle': 2401} score=1.0 reason=None
+  box=[395, 138, 33, 48] class=tennis_ball dom_hue=30 votes={'tennis_ball': 1130} score=1.0 reason=None

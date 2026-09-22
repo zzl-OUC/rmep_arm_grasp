@@ -3,10 +3,10 @@
   <!-- ============================================================
        实验3 桌面分类场景（网球 + 矿泉水瓶版）
        布局：6 个取物网格(全向) + 2 个分类料盒(正左瓶盒/正右球盒)
-       网格 r=0.185(轴向4 + 对角4取6):
-         cell_1 正前(0.185,0) 球 | cell_2 左前(0.131,0.131) 瓶
-         cell_3 右前(0.131,-0.131) 瓶 | cell_4 正后(-0.185,0) 瓶
-         cell_5 左后(-0.131,0.131) 球 | cell_6 右后(-0.131,-0.131) 球
+       网格 r=0.235(格外移 5cm 避开麦轮):
+         cell_1 正前(0.235,0) 球 | cell_2 左前(0.166,0.166) 瓶
+         cell_3 右前(0.166,-0.166) 瓶 | cell_4 正后(-0.235,0) 瓶
+         cell_5 左后(-0.166,0.166) 球 | cell_6 右后(-0.166,-0.166) 球
        料盒 r=0.21(3面墙, 开口朝中心):
          bin_0 (0, 0.24) 瓶盒(正左) | bin_1 (0, -0.24) 球盒(正右)
        依据：可达圆环 r ∈ [14.46, 25.64] cm（reach_analysis.py 实测）
@@ -17,7 +17,7 @@
   <world name="table_grid">
     <gui>
       <camera name="user_camera">
-        <pose>0 -1.05 0.75 0 0.62 1.5708</pose>
+        <pose>0.75 0 0.55 0 0.588 3.1416</pose>
       </camera>
     </gui>
     <include><uri>model://sun</uri></include>
@@ -47,172 +47,170 @@
     <pose frame="">0 0 0 0 0 0</pose>
     <!-- 6 取物网格: 0.09x0.09 薄板, 面向圆心 -->
     <link name="cell_1">
-      <pose frame="">0.1850 0.0000 0.0270 0 0 0.0000</pose>
+      <pose frame=""> 0.2250  0.0000 0.0270 0 0  0.0000</pose>
       <collision name="cell_1_col">
         <geometry><box><size>0.09 0.09 0.004</size></box></geometry>
-        <surface><friction><ode><mu>1.0</mu><mu2>1.0</mu2></ode></friction></surface>
+        <surface><friction><ode><mu>1.0</mu><mu2>1.0</mu2></ode><torsional><coefficient>0.5</coefficient><patch_radius>0.005</patch_radius><use_patch_radius>1</use_patch_radius></torsional></friction></surface>
       </collision>
-      <visual name="cell_1_vis">
-        <geometry><box><size>0.09 0.09 0.004</size></box></geometry>
-        <material><ambient>0.85 0.87 0.90 1</ambient><diffuse>0.85 0.87 0.90 1</diffuse></material>
-      </visual>
     </link>
     <link name="cell_2">
-      <pose frame="">0.1310 0.1310 0.0270 0 0 0.7854</pose>
+      <pose frame=""> 0.1591  0.1591 0.0270 0 0  0.7854</pose>
       <collision name="cell_2_col">
         <geometry><box><size>0.09 0.09 0.004</size></box></geometry>
-        <surface><friction><ode><mu>1.0</mu><mu2>1.0</mu2></ode></friction></surface>
+        <surface><friction><ode><mu>1.0</mu><mu2>1.0</mu2></ode><torsional><coefficient>0.5</coefficient><patch_radius>0.005</patch_radius><use_patch_radius>1</use_patch_radius></torsional></friction></surface>
       </collision>
-      <visual name="cell_2_vis">
-        <geometry><box><size>0.09 0.09 0.004</size></box></geometry>
-        <material><ambient>0.70 0.74 0.80 1</ambient><diffuse>0.70 0.74 0.80 1</diffuse></material>
-      </visual>
     </link>
     <link name="cell_3">
-      <pose frame="">0.1310 -0.1310 0.0270 0 0 -0.7854</pose>
+      <pose frame=""> 0.1591 -0.1591 0.0270 0 0 -0.7854</pose>
       <collision name="cell_3_col">
         <geometry><box><size>0.09 0.09 0.004</size></box></geometry>
-        <surface><friction><ode><mu>1.0</mu><mu2>1.0</mu2></ode></friction></surface>
+        <surface><friction><ode><mu>1.0</mu><mu2>1.0</mu2></ode><torsional><coefficient>0.5</coefficient><patch_radius>0.005</patch_radius><use_patch_radius>1</use_patch_radius></torsional></friction></surface>
       </collision>
-      <visual name="cell_3_vis">
-        <geometry><box><size>0.09 0.09 0.004</size></box></geometry>
-        <material><ambient>0.85 0.87 0.90 1</ambient><diffuse>0.85 0.87 0.90 1</diffuse></material>
-      </visual>
     </link>
     <link name="cell_4">
-      <pose frame="">-0.1850 0.0000 0.0270 0 0 3.1416</pose>
+      <pose frame="">-0.2250  0.0000 0.0270 0 0 3.1416</pose>
       <collision name="cell_4_col">
         <geometry><box><size>0.09 0.09 0.004</size></box></geometry>
-        <surface><friction><ode><mu>1.0</mu><mu2>1.0</mu2></ode></friction></surface>
+        <surface><friction><ode><mu>1.0</mu><mu2>1.0</mu2></ode><torsional><coefficient>0.5</coefficient><patch_radius>0.005</patch_radius><use_patch_radius>1</use_patch_radius></torsional></friction></surface>
       </collision>
-      <visual name="cell_4_vis">
-        <geometry><box><size>0.09 0.09 0.004</size></box></geometry>
-        <material><ambient>0.70 0.74 0.80 1</ambient><diffuse>0.70 0.74 0.80 1</diffuse></material>
-      </visual>
     </link>
     <link name="cell_5">
-      <pose frame="">-0.1310 0.1310 0.0270 0 0 2.3562</pose>
+      <pose frame="">-0.1591  0.1591 0.0270 0 0 2.3562</pose>
       <collision name="cell_5_col">
         <geometry><box><size>0.09 0.09 0.004</size></box></geometry>
-        <surface><friction><ode><mu>1.0</mu><mu2>1.0</mu2></ode></friction></surface>
+        <surface><friction><ode><mu>1.0</mu><mu2>1.0</mu2></ode><torsional><coefficient>0.5</coefficient><patch_radius>0.005</patch_radius><use_patch_radius>1</use_patch_radius></torsional></friction></surface>
       </collision>
-      <visual name="cell_5_vis">
-        <geometry><box><size>0.09 0.09 0.004</size></box></geometry>
-        <material><ambient>0.85 0.87 0.90 1</ambient><diffuse>0.85 0.87 0.90 1</diffuse></material>
-      </visual>
     </link>
     <link name="cell_6">
-      <pose frame="">-0.1310 -0.1310 0.0270 0 0 -2.3562</pose>
+      <pose frame="">-0.1591 -0.1591 0.0270 0 0 -2.3562</pose>
       <collision name="cell_6_col">
         <geometry><box><size>0.09 0.09 0.004</size></box></geometry>
-        <surface><friction><ode><mu>1.0</mu><mu2>1.0</mu2></ode></friction></surface>
+        <surface><friction><ode><mu>1.0</mu><mu2>1.0</mu2></ode><torsional><coefficient>0.5</coefficient><patch_radius>0.005</patch_radius><use_patch_radius>1</use_patch_radius></torsional></friction></surface>
       </collision>
-      <visual name="cell_6_vis">
-        <geometry><box><size>0.09 0.09 0.004</size></box></geometry>
-        <material><ambient>0.70 0.74 0.80 1</ambient><diffuse>0.70 0.74 0.80 1</diffuse></material>
-      </visual>
     </link>
-    <!-- bin_0 瓶盒(正左, r=0.24): 4 面墙, 内净 0.21x0.12。外移到 r=0.24 是为了让近墙(内壁 y=0.20)避开对角格张开指盒的 y 扫掠(最大 0.1865) -->
+    <!-- bin_0 瓶盒(正左, r=0.24): 4 面墙, 底板 0.29x0.29 正方, 内净 0.28x0.285。2026-09-21 沿远离原点方向外扩 y 0.135->0.29, 近墙 y=0.19 保持不动。远墙到 y=0.48 已超桌面 y 边界 0.40 约 8cm, 但 desk_layout 为 <static>true</static>, 悬空只是视觉不影响物理。投放点仍用 BINS(0,+-0.24) 未随盒心外移: 盒心 0.335 会让 dB=0.401 远超投放可达钳制线 DB_MAX=0.306。近墙内壁 y=0.1925 仍避开对角格张开指盒的 y 扫掠(最大 0.1865, 余量 6mm); x 加长为投放错开 0.075 留边 -->
     <link name="bin_0_base">
-      <pose frame="">0.0000 0.2625 0.0280 0 0 0.0000</pose>
+      <pose frame="">0.0000 0.3350 0.0280 0 0 0.0000</pose>
       <collision name="bin_0_base_col">
-        <geometry><box><size>0.21 0.13 0.006</size></box></geometry>
-      </collision>
+        <geometry><box><size>0.29 0.29 0.006</size></box></geometry><surface><friction><ode><mu>1.0</mu><mu2>1.0</mu2></ode><torsional><coefficient>0.5</coefficient><patch_radius>0.005</patch_radius><use_patch_radius>1</use_patch_radius></torsional></friction></surface></collision>
       <visual name="bin_0_base_vis">
-        <geometry><box><size>0.21 0.13 0.006</size></box></geometry>
+        <geometry><box><size>0.29 0.29 0.006</size></box></geometry>
         <material><ambient>0.45 0.45 0.45 1</ambient><diffuse>0.45 0.45 0.45 1</diffuse></material>
       </visual>
     </link>
     <link name="bin_0_wall_far">
-      <pose frame="">0.0000 0.3250 0.0500 0 0 0.0000</pose>
+      <pose frame="">0.0000 0.4800 0.0500 0 0 0.0000</pose>
       <collision name="bin_0_wall_far_col">
-        <geometry><box><size>0.21 0.005 0.05</size></box></geometry>
+        <geometry><box><size>0.29 0.005 0.05</size></box></geometry>
       </collision>
       <visual name="bin_0_wall_far_vis">
-        <geometry><box><size>0.21 0.005 0.05</size></box></geometry>
+        <geometry><box><size>0.29 0.005 0.05</size></box></geometry>
         <material><ambient>0.45 0.45 0.45 1</ambient><diffuse>0.45 0.45 0.45 1</diffuse></material>
       </visual>
     </link>
     <link name="bin_0_wall_xa">
-      <pose frame="">0.1050 0.2625 0.0500 0 0 0.0000</pose>
+      <pose frame="">0.1425 0.3350 0.0325 0 0 0.0000</pose>
       <collision name="bin_0_wall_xa_col">
-        <geometry><box><size>0.005 0.13 0.05</size></box></geometry>
+        <geometry><box><size>0.005 0.29 0.015</size></box></geometry>
       </collision>
       <visual name="bin_0_wall_xa_vis">
-        <geometry><box><size>0.005 0.13 0.05</size></box></geometry>
+        <geometry><box><size>0.005 0.29 0.015</size></box></geometry>
         <material><ambient>0.45 0.45 0.45 1</ambient><diffuse>0.45 0.45 0.45 1</diffuse></material>
       </visual>
     </link>
     <link name="bin_0_wall_xb">
-      <pose frame="">-0.1050 0.2625 0.0500 0 0 0.0000</pose>
+      <pose frame="">-0.1425 0.3350 0.0325 0 0 0.0000</pose>
       <collision name="bin_0_wall_xb_col">
-        <geometry><box><size>0.005 0.13 0.05</size></box></geometry>
+        <geometry><box><size>0.005 0.29 0.015</size></box></geometry>
       </collision>
       <visual name="bin_0_wall_xb_vis">
-        <geometry><box><size>0.005 0.13 0.05</size></box></geometry>
+        <geometry><box><size>0.005 0.29 0.015</size></box></geometry>
         <material><ambient>0.45 0.45 0.45 1</ambient><diffuse>0.45 0.45 0.45 1</diffuse></material>
       </visual>
     </link>
     <link name="bin_0_wall_near">
-      <pose frame="">0.0000 0.2000 0.0500 0 0 0.0000</pose>
+      <pose frame="">0.0000 0.1900 0.0325 0 0 0.0000</pose>
       <collision name="bin_0_wall_near_col">
-        <geometry><box><size>0.21 0.005 0.05</size></box></geometry>
+        <geometry><box><size>0.29 0.005 0.015</size></box></geometry>
       </collision>
       <visual name="bin_0_wall_near_vis">
-        <geometry><box><size>0.21 0.005 0.05</size></box></geometry>
+        <geometry><box><size>0.29 0.005 0.015</size></box></geometry>
         <material><ambient>0.55 0.55 0.55 1</ambient><diffuse>0.55 0.55 0.55 1</diffuse></material>
       </visual>
     </link>
-    <!-- bin_1 球盒(正右, r=0.24): 4 面墙, 内净 0.21x0.12。外移原因同 bin_0 -->
+    <!-- bin_1 球盒(正右, r=0.24): 与 bin_0 镜像, 底板 0.29x0.29 正方, 内净 0.28x0.285。理由同 bin_0 -->
     <link name="bin_1_base">
-      <pose frame="">0.0000 -0.2625 0.0280 0 0 0.0000</pose>
+      <pose frame="">0.0000 -0.3350 0.0280 0 0 0.0000</pose>
       <collision name="bin_1_base_col">
-        <geometry><box><size>0.21 0.13 0.006</size></box></geometry>
-      </collision>
+        <geometry><box><size>0.29 0.29 0.006</size></box></geometry><surface><friction><ode><mu>1.0</mu><mu2>1.0</mu2></ode><torsional><coefficient>0.5</coefficient><patch_radius>0.005</patch_radius><use_patch_radius>1</use_patch_radius></torsional></friction></surface></collision>
       <visual name="bin_1_base_vis">
-        <geometry><box><size>0.21 0.13 0.006</size></box></geometry>
+        <geometry><box><size>0.29 0.29 0.006</size></box></geometry>
         <material><ambient>0.55 0.55 0.55 1</ambient><diffuse>0.55 0.55 0.55 1</diffuse></material>
       </visual>
     </link>
     <link name="bin_1_wall_far">
-      <pose frame="">0.0000 -0.3250 0.0500 0 0 0.0000</pose>
+      <pose frame="">0.0000 -0.4800 0.0500 0 0 0.0000</pose>
       <collision name="bin_1_wall_far_col">
-        <geometry><box><size>0.21 0.005 0.05</size></box></geometry>
+        <geometry><box><size>0.29 0.005 0.05</size></box></geometry>
       </collision>
       <visual name="bin_1_wall_far_vis">
-        <geometry><box><size>0.21 0.005 0.05</size></box></geometry>
+        <geometry><box><size>0.29 0.005 0.05</size></box></geometry>
         <material><ambient>0.55 0.55 0.55 1</ambient><diffuse>0.55 0.55 0.55 1</diffuse></material>
       </visual>
     </link>
     <link name="bin_1_wall_xa">
-      <pose frame="">0.1050 -0.2625 0.0500 0 0 0.0000</pose>
+      <pose frame="">0.1425 -0.3350 0.0325 0 0 0.0000</pose>
       <collision name="bin_1_wall_xa_col">
-        <geometry><box><size>0.005 0.13 0.05</size></box></geometry>
+        <geometry><box><size>0.005 0.29 0.015</size></box></geometry>
       </collision>
       <visual name="bin_1_wall_xa_vis">
-        <geometry><box><size>0.005 0.13 0.05</size></box></geometry>
+        <geometry><box><size>0.005 0.29 0.015</size></box></geometry>
         <material><ambient>0.55 0.55 0.55 1</ambient><diffuse>0.55 0.55 0.55 1</diffuse></material>
       </visual>
     </link>
     <link name="bin_1_wall_xb">
-      <pose frame="">-0.1050 -0.2625 0.0500 0 0 0.0000</pose>
+      <pose frame="">-0.1425 -0.3350 0.0325 0 0 0.0000</pose>
       <collision name="bin_1_wall_xb_col">
-        <geometry><box><size>0.005 0.13 0.05</size></box></geometry>
+        <geometry><box><size>0.005 0.29 0.015</size></box></geometry>
       </collision>
       <visual name="bin_1_wall_xb_vis">
-        <geometry><box><size>0.005 0.13 0.05</size></box></geometry>
+        <geometry><box><size>0.005 0.29 0.015</size></box></geometry>
         <material><ambient>0.55 0.55 0.55 1</ambient><diffuse>0.55 0.55 0.55 1</diffuse></material>
       </visual>
     </link>
     <link name="bin_1_wall_near">
-      <pose frame="">0.0000 -0.2000 0.0500 0 0 0.0000</pose>
+      <pose frame="">0.0000 -0.1900 0.0325 0 0 0.0000</pose>
       <collision name="bin_1_wall_near_col">
-        <geometry><box><size>0.21 0.005 0.05</size></box></geometry>
+        <geometry><box><size>0.29 0.005 0.015</size></box></geometry>
       </collision>
       <visual name="bin_1_wall_near_vis">
-        <geometry><box><size>0.21 0.005 0.05</size></box></geometry>
+        <geometry><box><size>0.29 0.005 0.015</size></box></geometry>
         <material><ambient>0.55 0.55 0.55 1</ambient><diffuse>0.55 0.55 0.55 1</diffuse></material>
       </visual>
+    </link>
+  </model>
+
+  <!-- 观众相机: 正前斜俯视取景(替代 gzclient 录屏, 避免 GUI 渲染拖垮 RTF) -->
+  <model name="audience_cam">
+    <static>true</static>
+    <pose frame="">0.75 0 0.55 0 0.588 3.1416</pose>
+    <link name="audience_cam_link">
+      <sensor name="audience_cam_sensor" type="camera">
+        <pose frame="">0 0 0 0 0 0</pose>
+        <camera>
+          <horizontal_fov>1.05</horizontal_fov>
+          <image><width>768</width><height>432</height></image>
+          <clip><near>0.05</near><far>10.0</far></clip>
+        </camera>
+        <always_on>true</always_on>
+        <update_rate>10</update_rate>
+        <visualize>false</visualize>
+        <plugin name="audience_cam_controller" filename="libgazebo_ros_camera.so">
+          <ros><namespace>/</namespace></ros>
+          <camera_name>audience_cam</camera_name>
+          <frame_name>audience_cam_optical_frame</frame_name>
+        </plugin>
+      </sensor>
     </link>
   </model>
 
@@ -242,21 +240,5 @@
     </link>
   </model>
 
-  <!-- EP 车身（静态可视化，红色；仅 visual 无 collision，不影响已验证物理） -->
-  <model name="ep_car_body">
-    <static>true</static>
-    <pose frame="">0 0 0.105 0 0 0</pose>
-    <link name="ep_car_body_link">
-      <visual name="ep_car_body_vis">
-        <geometry><box><size>0.24 0.24 0.10</size></box></geometry>
-        <material>
-          <script>
-            <uri>file://media/materials/scripts/gazebo.material</uri>
-            <name>Gazebo/DarkGrey</name>
-          </script>
-        </material>
-      </visual>
-    </link>
-  </model>
   </world>
 </sdf>

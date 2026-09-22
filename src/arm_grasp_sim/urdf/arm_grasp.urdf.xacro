@@ -187,7 +187,7 @@ RoboMaster EP 工程机器人（底盘+机械臂+机械爪）抓取仿真模型
     <origin xyz="0.0103961 -0.0255713 0.030741" rpy="0 0 0"/>
     <parent link="arm_base_link"/><child link="arm_1_link"/>
     <axis xyz="0.0 1.0 0"/>
-    <limit effort="6" velocity="3" lower="-0.274" upper="1.384"/>
+    <limit effort="12" velocity="3" lower="-0.274" upper="1.384"/>
     <dynamics damping="1.0"/>
   </joint>
   <link name="arm_1_link">
@@ -214,7 +214,7 @@ RoboMaster EP 工程机器人（底盘+机械臂+机械爪）抓取仿真模型
     <origin xyz="0.0018704 0.0438659 0.1210238" rpy="0 0 0"/>
     <parent link="arm_1_link"/><child link="arm_2_link"/>
     <axis xyz="0.0 1.0 0"/>
-    <limit effort="6" velocity="3" lower="-1.25" upper="0.40"/>
+    <limit effort="12" velocity="3" lower="-1.25" upper="0.40"/>
     <dynamics damping="1.0"/>
   </joint>
   <link name="arm_2_link">
@@ -296,7 +296,7 @@ RoboMaster EP 工程机器人（底盘+机械臂+机械爪）抓取仿真模型
     <!-- x 由 0.048 前移到 0.058，使指盒中心落在被夹物质心上，见左指注释 -->
     <origin xyz="0.058 0 -0.0296" rpy="0 0 0"/>
     <axis xyz="0 1 0"/>
-    <limit effort="150" velocity="0.05" lower="0.0" upper="0.040"/>
+    <limit effort="150" velocity="0.05" lower="-0.006" upper="0.040"/>
     <dynamics damping="0.5" friction="0.2"/>
   </joint>
   <link name="left_finger_link">
@@ -335,7 +335,7 @@ RoboMaster EP 工程机器人（底盘+机械臂+机械爪）抓取仿真模型
     <!-- 与左指同步前移到 0.058 -->
     <origin xyz="0.058 0 -0.0296" rpy="0 0 0"/>
     <axis xyz="0 -1 0"/>
-    <limit effort="150" velocity="0.05" lower="0.0" upper="0.040"/>
+    <limit effort="150" velocity="0.05" lower="-0.006" upper="0.040"/>
     <dynamics damping="0.5" friction="0.2"/>
   </joint>
   <link name="right_finger_link">

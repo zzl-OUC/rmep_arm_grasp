@@ -1,0 +1,50 @@
+<?xml version="1.0"?>
+<!-- 网球 SDF 版: 与 tennis.urdf 物理参数完全一致(φ6.6cm / 0.057kg / kp=1e5 kd=10),
+     额外加扭转摩擦(滚动阻尼)。URDF 的 <gazebo> 扩展不支持 torsional,
+     球是完美球体, 滑动摩擦(mu)不阻碍滚动, 桌面上任何微小扰动都会让它一直滚。
+     torsional coefficient=1.0 + patch_radius=0.005: 滚动阻力矩上限 = c*N*rp
+     ≈ 1.0*0.56N*0.005m = 2.8e-3 N·m, 足以让球在亚厘米级滚动内停下。 -->
+<sdf version="1.7">
+  <model name="tennis">
+    <link name="tennis">
+      <inertial>
+        <mass>0.057</mass>
+        <inertia>
+          <ixx>0.000025</ixx><ixy>0</ixy><ixz>0</ixz>
+          <iyy>0.000025</iyy><iyz>0</iyz><izz>0.000025</izz>
+        </inertia>
+      </inertial>
+      <collision name="tennis_collision">
+        <geometry><sphere><radius>0.033</radius></sphere></geometry>
+        <surface>
+          <friction>
+            <ode><mu>2.0</mu><mu2>2.0</mu2></ode>
+            <torsional>
+              <coefficient>1.0</coefficient>
+              <patch_radius>0.005</patch_radius>
+              <use_patch_radius>1</use_patch_radius>
+            </torsional>
+          </friction>
+          <contact>
+            <ode><kp>1e5</kp><kd>10</kd><min_depth>0.0001</min_depth></ode>
+          </contact>
+        </surface>
+      </collision>
+      <visual name="tennis_vis">
+        <geometry><sphere><radius>0.033</radius></sphere></geometry>
+        <material>
+          <ambient>0.85 0.80 0.10 1</ambient>
+          <diffuse>0.85 0.80 0.10 1</diffuse>
+        </material>
+      </visual>
+      <!-- 速度衰减(等效风阻/滚动阻尼): 完美球体在数值解算的微扰下会缓慢自滚,
+           接触参数管不了滚动(滚动不是滑动, torsional 只管绕法线自旋)。
+           angular=2.0 让无外力滚动 ~1s 内停下; linear=0.05 仅 5%/s,
+           对抓取/投放的自由落体与搬运无可见影响。 -->
+      <velocity_decay>
+        <linear>0.05</linear>
+        <angular>2.0</angular>
+      </velocity_decay>
+    </link>
+  </model>
+</sdf>

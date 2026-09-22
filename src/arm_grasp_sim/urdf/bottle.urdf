@@ -1,11 +1,11 @@
 <?xml version="1.0"?>
 <robot name="bottle" xmlns:xacro="http://www.ros.org/wiki/xacro">
-  <!-- 矿泉水瓶(矮化): φ6.5cm × 高10cm, 高饱和蓝, 质量 0.05kg。
-       几何: 瓶身圆柱(φ6.5,h8) + 瓶颈圆柱(φ3,h2), link 原点=瓶身中心。
+  <!-- 矿泉水瓶(矮化): φ5.5cm × 高10cm, 高饱和蓝, 质量 0.05kg。
+       几何: 瓶身圆柱(φ5.5,h8) + 瓶颈圆柱(φ3,h2), link 原点=瓶身中心。
        视觉: 高饱和蓝 (OpenCV H≈110), 落入 bottle 色带 (95,130)。 -->
   <link name="bottle">
     <visual>
-      <geometry><cylinder radius="0.0325" length="0.08"/></geometry>
+      <geometry><cylinder radius="0.0275" length="0.08"/></geometry>
       <origin xyz="0 0 0" rpy="0 0 0"/>
       <material name="bottle_blue"><color rgba="0.10 0.35 0.85 1"/></material>
     </visual>
@@ -14,11 +14,11 @@
       <origin xyz="0 0 0.05" rpy="0 0 0"/>
       <material name="bottle_cap"><color rgba="0.10 0.35 0.85 1"/></material>
     </visual>
-    <!-- 碰撞体用 box 近似(0.065×0.065×0.10 外接盒): 指面-平面接触稳定。
+    <!-- 碰撞体用 box 近似(0.055×0.055×0.10 外接盒): 指面-平面接触稳定。
          接触刚度已对齐 tennis.urdf/sphere 与指盒: kp=1e5 kd=10 minDepth=1e-4
          (原 kp=1e6 在轻体+1ms 步长下数值爆炸弹飞 z<-5000，见 §七 根因)。 -->
     <collision>
-      <geometry><box size="0.065 0.065 0.10"/></geometry>
+      <geometry><box size="0.055 0.055 0.10"/></geometry>
       <origin xyz="0 0 0.0" rpy="0 0 0"/>
     </collision>
     <inertial>

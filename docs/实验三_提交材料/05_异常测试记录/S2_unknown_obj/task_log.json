@@ -1,0 +1,83 @@
+[
+  {
+    "grid": "cell_4",
+    "cls": "unknown",
+    "result": "skipped_unknown",
+    "reason": "物体颜色不属任何已知类别(未识别)",
+    "score": 0.0
+  },
+  {
+    "grid": "cell_1",
+    "cls": "tennis_ball",
+    "bin": "bin_1",
+    "result": "placed",
+    "message": "dist=0.062"
+  },
+  {
+    "grid": "cell_2",
+    "cls": "bottle",
+    "bin": "bin_0",
+    "result": "placed",
+    "message": "dist=0.022"
+  },
+  {
+    "grid": "cell_3",
+    "cls": "bottle",
+    "result": "retry",
+    "error_code": 6,
+    "reason": "dist=0.097"
+  },
+  {
+    "grid": "cell_3",
+    "cls": "bottle",
+    "result": "grasp_failed",
+    "error_code": 2,
+    "reason": "夹空: 抬升后方块 z=0.079 仍在台面"
+  },
+  {
+    "grid": "cell_5",
+    "cls": "tennis_ball",
+    "result": "retry",
+    "error_code": 6,
+    "reason": "dist=1.290"
+  },
+  {
+    "grid": "cell_5",
+    "cls": "tennis_ball",
+    "result": "grasp_failed",
+    "error_code": 2,
+    "reason": "夹空: 抬升后方块 z=-7406.545 仍在台面"
+  },
+  {
+    "grid": "cell_6",
+    "cls": "tennis_ball",
+    "result": "retry",
+    "error_code": 6,
+    "reason": "dist=0.230"
+  },
+  {
+    "grid": "cell_6",
+    "cls": "tennis_ball",
+    "result": "grasp_failed",
+    "error_code": 2,
+    "reason": "夹空: 抬升后方块 z=0.058 仍在台面"
+  },
+  {
+    "grid": null,
+    "cls": null,
+    "result": "summary",
+    "placed": 2,
+    "failed": 3,
+    "skipped": 1,
+    "counts": {
+      "placed": 2,
+      "unreachable": 0,
+      "grasp_failed": 3,
+      "motion_failed": 0,
+      "place_failed": 0,
+      "failed": 0,
+      "skipped_empty": 0,
+      "skipped_unknown": 1
+    }
+  }
+]

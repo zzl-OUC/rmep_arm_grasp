@@ -1,0 +1,127 @@
+# 实验三 真机版参数（classify_grasp_server_real.py + 视觉/映射/任务）
+# 坐标: arm_base_link 系, x 向前(米), z 向上(米), 桌面 z≈0。
+# 上机前把带 "←" 的项按实机标定值替换。
+#
+# ⚠ 真机物体 = 鼠标(mouse) + 网球(tennis_ball)，与仿真的彩色方块**不同**（sim≠real 对象）。
+#   鼠标多为黑/灰/白 => 低饱和 => 轮廓法连框都找不到，其所在网格会被误判成
+#   "空网格"(假空网格)。故真机**必须** use_yolo=true 且 class_from_yolo=true，
+#   类别完全由检测模型给出，不做任何颜色投票。
+
+classify_grasp_server_real:
+  ros__parameters:
+    rm_ns: 'robomaster'          # robomaster_ros 驱动命名空间
+    x_grasp: 0.20                # ← 抓取点 x（臂正前方, 必须在 x_range 内）
+    z_grasp: 0.02                # ← 抓取高度（目标物中部）
+    x_drop: 0.20                 # ← 投放点 x
+    z_drop: 0.02                 # ← 投放高度
+    z_safe: 0.10                 # 安全/搬运高度
+    gripper_power: 0.5
+    max_step_m: 0.03             # move_arm 插值子航点最大步长（限速）
+    x_range: [0.05, 0.24]        # EP 实测可达包线（>0.20 饱和）
+    z_range: [0.0, 0.20]
+    chassis_angular_speed: 0.5   # 底盘对位角速度 rad/s
+    chassis_linear_speed: 0.3
+    chassis_timeout: 15.0
+    use_chassis: true            # 关掉则只做单平面抓取（物体全在臂正前方）
+    # ↓↓↓ 方位角(rad, 世界系, 相对机器人初始朝向) ↓↓↓
+    # 闭环模式(align_mode=closed)下, 网格对位**不再依赖** grid_azimuth —— 它由
+    # "实测物体在臂基座系的 (x,y)" 实时算出。此表只在 align_mode=open 或做兜底时用。
+    grid_azimuth: '{"cell_1": 0.349, "cell_2": 0.838, "cell_3": 1.326, "cell_4": 1.815, "cell_5": 2.304, "cell_6": 2.793}'
+    bin_azimuth: '{"bin_0": -2.620, "bin_1": -1.920}'
+    confirm_via_detect: true     # 用 /grid_detections 做抓取确认
+    miss_if_still_present: false # true=抓取后该格仍在检测中则判夹空（先确认相机不被臂遮挡再开）
+    # ── 视觉闭环对位（前提：相机随车转）──────────────────────────────────
+    align_mode: 'closed'         # closed=转完重测目标实测位置并迭代收敛; open=旧的静态方位角开环
+    align_max_iter: 8            # 轮数上限(典型只用 ~2 轮, 这只是天花板, 不会白花时间)
+    align_lateral_tol: 0.008     # m, 横向残差收敛判据(8mm); 太大=夹不正, 太小=收敛不了空转
+    align_settle: 0.6            # s, 每轮转完等底盘停稳再重新检测
+    align_det_timeout: 2.5       # s, 等一条"转完之后"的新检测
+    align_min_step: 0.03         # rad, 有效转角下限(须 >= 底盘对位死区, 否则会空转)
+    align_gain: 0.8              # ⚠ 阻尼: 实际只转 0.8×Δ。=1.0 在"偏置未知"时会过冲振荡
+                                 #   (参数扫描: 1.0 时未知偏置场景 2.3~8.3% 超差; 0.8 时 0.0%)
+    # ── 臂基座偏置 r_b(= 臂基座到**底盘旋转中心**的距离)──────────────────
+    # 纠正量是 atan2(y, x + r_b); 分母少了它 -> 转角偏大 -> 过冲振荡。
+    # 好消息: **不用拿尺子量** —— 第一次转完就能从两次实测 + odom 实测转角解出来,
+    # 之后每轮继续修正。base_offset 只是初值, 填 0 即可。
+    base_offset: 0.0             # m, 初值(已知也可直接填); 0=完全交给在线自估
+    base_offset_auto: true       # 在线自估该偏置
+    base_offset_max: 0.35        # m, 自估合理上限(挡坏数据)
+    base_offset_alpha: 0.5       # 自估指数平滑系数(抗单次测量噪声)
+    grasp_x_from_vision: true    # 抓取 x 用实测值(而非固定 x_grasp); 超出 x_range 会钳住并告警
+    # ── heading 反馈（/robomaster/odom 实测转角，替代"按指令值自推"）──────
+    heading_from_odom: true
+    odom_topic: ''               # 空=自动 '/robomaster/odom'
+    odom_max_age: 1.0            # s, odom 超过这个年龄就当作无反馈
+    odom_yaw_sign: 1.0           # ⚠ 上机看日志: 若每轮"滑差"都很接近 ±π 或异常大, 改成 -1
+    log_dir: '~/classify_real_logs'
+
+vision_classifier:
+  ros__parameters:
+    # 真机相机话题 —— 先用 probe_real_camera.py 列出实际名字。EP 云台相机常见两种:
+    #   /robomaster/camera/image_color  (raw, 驱动直出)
+    #   /robomaster/camera/image_raw    (H.264 经 decompress_h264.py 解码后)
+    image_topic: '/robomaster/camera/image_color'
+    out_topic: '/detections'
+    use_yolo: true                     # 真机必须开（鼠标低饱和，轮廓法抓不到）
+    class_from_yolo: true              # 真机模式 B: 类别直接取模型 names(mouse/tennis_ball)
+    yolo_weights: '/home/underwater/arm_grasp_ws/models/best_real3.onnx'   # mouse+tennis_ball
+    yolo_backend: 'auto'               # auto: .onnx→cv2.dnn(零依赖, 无需 torch); .pt→ultralytics
+    yolo_names: 'mouse,tennis_ball'    # ⚠ 顺序必须与训练一致(0=mouse, 1=tennis_ball)
+    yolo_imgsz: 640
+    yolo_iou: 0.7                    # 对齐 ultralytics 默认; 调小会误删相邻/重叠框
+    yolo_cuda: false                   # WSL 的 opencv 若带 CUDA 可改 true
+    yolo_conf: 0.40                    # 检测阈值; 不开仲裁时须 >= 下方 min_score
+                                       # ⚠ 开仲裁后要降到 arbiter_low 附近(如 0.15)，可疑框才活得到仲裁那一步
+    publish_debug: true
+    # ── 低置信度仲裁层（可选，默认关；先在 tools 里量"值不值得"再打开）────────────
+    # 分层路由: conf ≥ arbiter_high 直接用模型类别;
+    #           arbiter_low ≤ conf < arbiter_high 交 VLM 仲裁(先过几何 sanity);
+    #           conf < arbiter_low 当噪声丢弃。
+    low_conf_arbiter: false
+    arbiter_high: 0.60                 # ≥ 此值不问 VLM
+    arbiter_low: 0.15                  # < 此值丢噪声（须 ≥ yolo_conf，两个参数联动）
+    arbiter_accept_score: 0.99         # 仲裁采纳后改写 score; 必须 ≥ min_score, 否则采纳结果被丢掉 -> VLM 白做
+    arbiter_timeout: 3.0               # 单次调用超时(s); ⚠ 首次调用含模型加载会远超稳态, 先给 3-5s 预热
+    # ↓ Ollama 本地 server（**原生** /api/chat，默认端口 11434）↓
+    arbiter_url: 'http://127.0.0.1:11434/api/chat'
+    arbiter_payload_style: 'ollama'    # ollama=原生 /api/chat（图片收原始 base64，不带 data: 前缀）
+                                       # openai=/v1/chat/completions；raw=自定义契约
+    arbiter_model: 'qwen3vl'           # ← 必须与 `ollama create <名字>` 一致
+    arbiter_max_tokens: 8              # 只要一个词，别让它啰嗦 —— 直接影响延迟
+    arbiter_async: true                # 异步"提交-取回"，避免阻塞图像回调
+    arbiter_min_area: 300              # 几何 sanity: 框面积下限(px²)
+    arbiter_max_area: 4000             # 几何 sanity: 框面积上限(px²)
+    arbiter_max_aspect: 4.0            # 几何 sanity: 最长边/最短边 上限
+    arbiter_allowed: 'mouse,tennis_ball'   # 闭集白名单(归一化用, 表外一律记 skipped_unknown)
+
+grid_mapper:
+  ros__parameters:
+    # ── 优先用 homography(单应); 它非空时下面前 5 个针孔参数全部不参与计算 ──
+    # 标定流程(工具已就位):
+    #   1) ros2 run arm_grasp_sim probe_real_camera.py        # 先确认能俯视看到桌面
+    #   2) 量出 4+ 个已知点的 世界坐标(臂基座系,米) 与 图上像素 存 points.json
+    #   3) ros2 run arm_grasp_sim calib_real_grid.py fit points.json
+    #      -> 输出一行 homography, 粘到下面
+    #   4) ros2 run arm_grasp_sim calib_real_grid.py check --topic <相机话题> \
+    #          --homography "<粘的那行>"     # 存核对图, 确认绿十字压在格心上
+    homography: ''                     # ← 例: '[412.3, 12.5, 401.0, ...]' (9 个数)
+    cells: ''                          # ← 真机网格中心 JSON {"cell_1":[x,y],...}; 空=用内置仿真几何
+    image_width: 640                   # ← 真机相机分辨率(probe 会报)
+    image_height: 480
+    hfov: 1.2                          # ← 仅在不给 homography 时使用
+    cam_height: 1.0                    # ← 镜头到桌面高度(米), 同上
+    swap_axes: false                   # ← 安装朝向, 同上
+    cell_tol: 0.06                     # ⚠ 真机网格间距若不同要同步调; 太小=判不到格, 太大=邻格互抢
+    # 注: cells 为空时才用 grid_mapper.py 里的内置 CELLS(仿真几何)。真机务必填 cells 或
+    #     homography。grid_azimuth 也仍要按真机实测(见文件顶部 classify_grasp_server_real 段)。
+
+classify_task_node:
+  ros__parameters:
+    # 键必须与检测模型 names 完全一致（真机: mouse / tennis_ball）
+    class_bin_map: '{"mouse": "bin_0", "tennis_ball": "bin_1"}'
+    min_score: 0.35                    # ⚠ 模式B下 score=检测conf, 必须 <= yolo_conf
+    scan_timeout: 8.0
+    # 扫描窗口: 逐格累积到这个时长才认为"这一轮看全了"。太短 -> 某格刚好没被检出就
+    # 被判成空网格(假空网格)。仿真调试时从 3s 提到 6s 就是踩过这个坑。
+    scan_stable: 6.0                   # ← 真机若要更稳可加大(代价: 每轮多等)
+    log_dir: '~/classify_logs'

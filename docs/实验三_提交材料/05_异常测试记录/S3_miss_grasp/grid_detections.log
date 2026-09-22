@@ -1,0 +1,9 @@
+=== /grid_detections (视觉反投影世界坐标) ===
+  grid=cell_2   cls=bottle         score=1.000  u=287.0  v=207.5   x=0.1446    y=0.1453   
+  grid=cell_1   cls=tennis_ball    score=1.000  u=400.5  v=166.5   x=0.1974    y=-0.0006  
+=== /detections (2) ===
+  bottle         score=1.000  cx=287 cy=208
+  tennis_ball    score=1.000  cx=400 cy=166
+=== /vision_debug ===
+  box=[255, 176, 64, 63] class=bottle dom_hue=120 votes={'bottle': 2402} score=1.0 reason=None
+  box=[373, 138, 55, 57] class=tennis_ball dom_hue=30 votes={'tennis_ball': 1988} score=1.0 reason=None

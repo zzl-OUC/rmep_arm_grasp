@@ -1,6 +1,6 @@
 # ClassifyGrasp.action — 实验三分类抓取
 # 请求: 网格号 + 物体类别 + 目标料盒
-string grid_id     # cell_1..cell_4
+string grid_id     # cell_1..cell_6
 string class_id    # green_block / yellow_block
 string bin_id      # bin_0 / bin_1
 ---
@@ -8,6 +8,14 @@ string bin_id      # bin_0 / bin_1
 bool success
 string bin_id      # 实际放置料盒(回显)
 string message     # 判定信息(方块距盒心距离 / 失败原因)
+int32 error_code   # 失败分类(实验要求: 不可达目标 vs 抓取失败 须可区分)
+                   #   0 = 无错误(成功)
+                   #   1 = unreachable     运动学/IK 不可达(目标超出可达包络)
+                   #   2 = grasp_missed    抓取失败(抬升后物体仍在台面 = 夹空)
+                   #   3 = motion_failed   运动到位失败(关节未收敛)
+                   #   4 = unknown_target  非法网格/料盒
+                   #   5 = internal        内部异常
+                   #   6 = place_failed    放置未落入目标盒心 7cm 判定阈值
 ---
 # 反馈
 string current_state

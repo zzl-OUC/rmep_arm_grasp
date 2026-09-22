@@ -1,0 +1,18 @@
+# 实验三 真机仲裁 VLM —— Qwen3-VL-4B-Instruct（Ollama 本地导入，不重复下载）
+#
+# 用法（在本目录下执行，路径用相对 `./`）：
+#   set OLLAMA_MODELS=D:\ollama\models
+#   ollama create qwen3vl -f Modelfile.qwen3vl
+#   ollama show qwen3vl        # ⚠ 必须看到 Capabilities 里有 vision，Projector 那行有参数
+#
+# ⚠ 关键：多模态 GGUF 是「分体式」的 —— 主模型 + mmproj(视觉投影)。必须两行都给，
+#    只写 FROM 会报 500: this model is missing data required for image input。
+#    官方推荐 mmproj 用 F16（别单独量化）。
+
+FROM ./Qwen3VL-4B-Instruct-Q4_K_M.gguf
+ADAPTER ./mmproj-Qwen3VL-4B-Instruct-F16.gguf
+
+# 仲裁只要一个词，上下文给 4096 足够（省显存）
+PARAMETER num_ctx 4096
+PARAMETER temperature 0.0
+PARAMETER num_predict 8

@@ -1,0 +1,16 @@
+[classify_sim] blocks_preset=unreachable -> 生成 2 个物体 [(0.185, 0.0, 'tennis'), (0.131, 0.131, 'bottle')]
+[classify_task_node.py-14] [INFO] [1789776936.666905496] [classify_task_node]: [task] SCAN 开始扫描桌面
+[classify_task_node.py-14] [INFO] [1789776942.669547098] [classify_task_node]: [task] SCAN 计划: [('cell_1', 'tennis_ball'), ('cell_2', 'bottle')]
+[classify_task_node.py-14] [INFO] [1789776942.670135187] [classify_task_node]: [task] GRASP cell_1 tennis_ball -> bin_1 (retry=0)
+[classify_grasp_server.py-9] [INFO] [1789776942.675255563] [classify_grasp_server]: [state] SCAN_OK
+[classify_grasp_server.py-9] [INFO] [1789776942.675801720] [classify_grasp_server]: [state] HOME
+[classify_grasp_server.py-9] [INFO] [1789776951.819203757] [classify_grasp_server]: [state] APPROACH_GRID
+[classify_grasp_server.py-9] [INFO] [1789776955.262717278] [classify_grasp_server]: [state] DESCEND_MID
+[classify_grasp_server.py-9] [INFO] [1789776957.070075448] [classify_grasp_server]: [state] DESCEND_GRID
+[classify_task_node.py-14] [INFO] [1789776957.267421689] [classify_task_node]: [task] GRASP cell_2 bottle -> bin_0 (retry=0)
+[classify_grasp_server.py-9] [INFO] [1789776957.272388652] [classify_grasp_server]: [state] SCAN_OK
+[classify_grasp_server.py-9] [INFO] [1789776957.272863112] [classify_grasp_server]: [state] HOME
+[classify_grasp_server.py-9] [INFO] [1789776966.400821591] [classify_grasp_server]: [state] APPROACH_GRID
+[classify_grasp_server.py-9] [INFO] [1789776971.581189555] [classify_grasp_server]: [state] DESCEND_MID
+[classify_grasp_server.py-9] [INFO] [1789776973.864066640] [classify_grasp_server]: [state] DESCEND_GRID
+[classify_task_node.py-14] [INFO] [1789776974.065478138] [classify_task_node]: [task] DONE placed=0 failed=2 skipped=4 (empty+unknown)

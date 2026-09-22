@@ -33,8 +33,13 @@
 ## 功能特性
 
 - **仿真 / 真机共用同一 Action 接口**：`GraspCycle`（`arm_grasp_interfaces`），带 `feedback`（`current_state` / `progress` / `gripper_closed`），满足"可反馈长时间任务"接口要求。
-- **仿真侧**：Gazebo Classic 11 + `ros2_control` 速度跟踪；夹持保留靠**摩擦物理**（非运动学瞬移，物体位置全程由 Gazebo 解算）。
-  `gazebo_grasp_fix` 插件确已构建并随 launch 加入 `GAZEBO_PLUGIN_PATH`、日志无加载失败，但**实测它并未对本场景的物体生效**（物体可相对 TCP 自由移动/上滑，说明没有被 attach），所以不要把"物体不掉落"归因于该插件；真正的保持来自指面-物体摩擦。
+- **仿真侧**：Gazebo Classic 11 + `ros2_control` 速度跟踪；夹持保持由**两条机制共同提供**，已分别量化，不要混淆：
+  1. `gazebo_grasp_fix` 插件**确实生效**（日志 `Grasp Held` / `Attaching` / `Detaching` 与抓取一一对应，
+     `palm_link=endpoint_bracket_link`，`grip_count_threshold=2`）——它是焊接式吸附，不是摩擦。
+  2. **摩擦夹持本身也成立**：把该插件的 `.so` 名字改成不存在使其中止加载（`Attaching` 计数归 0 为证），
+     其余配置一字不动，实跑仍 **5/6 placed**（失手的是搬运途中从指间爬出的网球）。
+  所以"6/6"不是插件单独造出来的，但**纯摩擦目前做不到 6/6**，报告与答辩里应按这个口径说。
+  （早期 README 曾写"实测该插件对本场景不生效、不要把不掉落归因于它"——**该结论已被 2026-09-22 的对照实跑否证**。）
 - **真机侧**：基于 `robomaster_ros` 驱动的 `move_arm` / `gripper` action，包含：
   - 工作空间安全闸门（`x_range` / `z_range` 超限直接拒绝执行）；
   - 每轮 CSV 轨迹日志（`~/grasp_logs`，含航点序列 + 10 Hz TCP 轨迹 + 每轮结果）；
@@ -223,28 +228,36 @@ ros2 launch arm_grasp_sim classify_real.launch.py conn_type:=ap
 
 ### 场景布局
 
+> **2026-09-22 更新**：本节原为"绿/黄方块"版（R≈0.19 弧排、料盒 0.29×0.135 高壁），
+> 现场景已改为**网球 + 矿泉水瓶**、6 格外移到 r=0.225、料盒改 0.29×0.29 正方并把近壁/侧壁顶削到 z=0.040。
+
 ```
-            俯视相机 (z=1.0, 朝下)
-         cell_3 ●  ● cell_2
-      cell_4 ●  [机械臂]  ● cell_1        bin_1 (-0.0770, -0.2114)
-         cell_5 ●  ● cell_6                bin_0 (-0.1949, -0.1125)
+                 俯视相机 top_camera (0,0,1.0) 朝下, hfov=0.95, 800x640
+        cell_2 ●             ● cell_1(正前)             ● cell_3
+                    [EP 底盘 + 2-DOF 臂]
+     bin_1 (0,-0.24) 网球盒        ←   →      bin_0 (0,+0.24) 瓶盒
+        cell_5 ●           cell_4(正后)           ● cell_6
 ```
 
-- 6 个取物网格（呈 20°~160° 弧形排列）：`cell_1(0.1785, 0.0650)` `cell_2(0.1271, 0.1412)`
-  `cell_3(0.0460, 0.1844)` `cell_4(-0.0460, 0.1844)` `cell_5(-0.1271, 0.1412)` `cell_6(-0.1785, 0.0650)`
-- 6 个方块：**绿 3 / 黄 3**（cell_1 / cell_3 / cell_6 绿，cell_2 / cell_4 / cell_5 黄），与 `GRIDS`/`CELLS` 一一对应
-- 2 个料盒（中性灰，仅作放置位；类别由代码 `class_bin_map` 映射，与视觉无关）：绿 → `bin_0`、黄 → `bin_1`
+- 6 个取物格（前弧 r=0.225 m）：`cell_1(0.2250,0)` `cell_2(0.1591,0.1591)` `cell_3(0.1591,-0.1591)`
+  `cell_4(-0.2250,0)` `cell_5(-0.1591,0.1591)` `cell_6(-0.1591,-0.1591)`
+- 6 个物体：**网球 3**（cell_1/5/6，φ66）+ **矿泉水瓶 3**（cell_2/3/4，φ55×100，2026-09-22 由 φ65 缩小）
+- 2 个料盒：`bin_0 (0,+0.24)` 装瓶、`bin_1 (0,-0.24)` 装网球；类别→盒由 `class_bin_map` 决定，与颜色无关
+- 料盒是 `<static>true</static>`，沿 y 外扩到 |y|=0.48 超出桌面边缘只是视觉悬空，不影响物理
 
 ### 链路（4 个节点 + 1 个 action）
 
 | 节点 | 输入 → 输出 | 作用 |
 |---|---|---|
-| `vision_classifier.py` | `/top_camera/image_raw` → `/detections` | 方案 C：轮廓法检测框 + 框内 HSV 颜色直方图分类（**绿/黄两类**）；料盒设中性灰被 is_colored 掩码排除，不与同色方块合并 |
+| `vision_classifier.py` | `/top_camera/image_raw` → `/detections` | 方案 C：轮廓法检测框 + 框内 HSV 色相投票分类（**网球 / 矿泉水瓶两类**，色带 (15,78) 与 (95,130)）；料盒设中性灰被 is_colored 掩码排除 |
 | `grid_mapper.py` | `/detections` → `/grid_detections` | 像素坐标经相机内参投影到桌面坐标，归入最近网格（俯视画面相对世界旋转 180°） |
 | `classify_task_node.py` | `/grid_detections` → 任务状态机 | 扫描 → 计划 → 逐个下发抓取目标；处理空网格 / 未识别 / 抓取失败（重试 1 次）|
 | `classify_grasp_server.py` | `ClassifyGrasp` action | 单次「抓取 → 搬运 → 放置」动作，复用实验二已验收的运动层 |
 
-抓取序列：`HOME → APPROACH_GRID → DESCEND_GRID → GRASP → LIFT(抬至 Q_CARRY) → TRANSPORT(转 yaw 到料盒) → DESCEND_BIN → RELEASE → LIFT_BIN`。
+抓取序列（当前实现，含两段式下降与失败隔离）：
+`HOME → APPROACH_GRID → DESCEND_MID → DESCEND_GRID → GRASP → LIFT → TRANSPORT → DESCEND_BIN → RELEASE → LIFT_BIN → CYCLE_DONE`；
+夹空分支 `LIFT → GRASP_MISSED`。每格 `HOME` 后先跑一次"掌上残留"检查（任一物体 z>0.105 判为上一格漏脱焊，强制开爪）。
+完整状态/守卫/错误码/重试策略见本包 `03_状态机配置/classify_state_machine.xml`。
 
 ### 一键运行
 
@@ -257,24 +270,33 @@ ros2 launch arm_grasp_sim classify_sim.launch.py
 
 全自动完成 6 个方块的识别与分类放置，无需人工干预。过程日志：`~/classify_logs/task_log.json`。
 
-### 验收结果（2026-09-14，`ros2 launch arm_grasp_sim classify_sim.launch.py` 全自动验收）
+### 验收结果（最新：2026-09-22，带 gzclient 全自动验收）
 
 ```
-DONE placed=6 failed=0 skipped=0     # 两类 6 块全部正确分类
+DONE placed=6 failed=0 skipped=0
+counts: unreachable=0 grasp_failed=0 motion_failed=0 place_failed=0   # 整轮 318s, RTF≈1.25
 ```
 
-| 网格 | 类别 | 目标料盒 | 距盒心 | 结果 |
-|---|---|---|---|---|
-| cell_1 | 绿 | bin_0 | 0.022 m | ✅ |
-| cell_2 | 黄 | bin_1 | 0.023 m | ✅ |
-| cell_3 | 绿 | bin_0 | 0.024 m | ✅ |
-| cell_4 | 黄 | bin_1 | 0.026 m | ✅ |
-| cell_5 | 黄 | bin_1 | 0.032 m | ✅ |
-| cell_6 | 绿 | bin_0 | 0.020 m | ✅ |
+| 网格 | 类别 | 目标料盒 | 距投放点 | 距盒心 | 结果 |
+|---|---|---|---|---|---|
+| cell_1 | tennis_ball | bin_1 | 0.001 | 0.001 | ✅ |
+| cell_2 | bottle | bin_0 | 0.001 | 0.001 | ✅ |
+| cell_3 | bottle | bin_0 | 0.012 | 0.074 | ✅ |
+| cell_4 | bottle | bin_0 | 0.009 | 0.079 | ✅ |
+| cell_5 | tennis_ball | bin_1 | 0.011 | 0.073 | ✅ |
+| cell_6 | tennis_ball | bin_1 | 0.012 | 0.074 | ✅ |
 
-**6/6 全部正确分类**，零失败、零重试；放置判定阈值为距盒心 < 0.07 m。两类各归其盒：绿 → `bin_0`（3 块）、黄 → `bin_1`（3 块）。视觉链路扫描阶段 6 个网格类别全部识别正确。
+判定阈值是**落点距投放点 < 0.07 m**；`距盒心` 偏大属设计预期——同盒 3 件沿 x 错开 ±0.075 m 以免堆叠。
+逐轮记录与方差说明见本包 `04_分类结果与日志/各轮结果汇总.md`。
 
-### 异常场景验收（2026-09-15）
+> 历史：2026-09-14 方块版首轮同为 6/6（距盒心 0.020~0.032 m），但当时物体是绿/黄方块、
+> 料盒是高壁版，几何参数与上表不可直接比较。
+
+### 异常场景验收（记录产生于 2026-09-15，**旧几何**）
+
+> ⚠ 下表结果是在"绿/黄方块 + r≈0.19 + 高壁料盒"版本上跑出来的。当前工程已改为网球/瓶、
+> r=0.225、矮壁正方盒，异常场景**需要用 `scripts/run_exceptions.sh` 重跑一次**才算严格配套。
+> 逐条证据见本包 `05_异常测试记录/`。
 
 实验要求「**至少正确处理空网格和未识别物体两种情况**」→ 该两项为**核心必测项（★）**，各**连续两次复现一致**；另附加覆盖 2 类异常。
 异常通过 `blocks_preset` / `z_grasp` 参数注入，**不改动运行期代码**；全自动、无人工干预。
@@ -290,7 +312,10 @@ DONE placed=6 failed=0 skipped=0     # 两类 6 块全部正确分类
 - 异常后任务**不中断**：S3 夹空后 cell_2 照常放置；S1/S2/S4 均跑完并输出 summary。
 - 失败分类：夹空（error_code=2）重试 1 次后记 `grasp_failed`；IK 不可达（error_code=1）确定性失败**不重试**。
 - 全量记录：`~/classify_logs/exceptions/<场景>/task_log.json`，汇总 `_summary.txt`；方法与逐条证据见 [`docs/实验三_异常测试记录.md`](src/arm_grasp_sim/docs/实验三_异常测试记录.md)。
-- ⚠️ 已知偶发：cell_4 位于可达包络边缘，曾出现 1 次 `motion_failed`（关节未收敛），复跑即恢复。已在记录文档 §6 诚实标注。
+- ~~已知偶发：cell_4 位于可达包络边缘，曾出现 1 次 `motion_failed`（关节未收敛），复跑即恢复。~~
+  **2026-09-22 已定位并消除**：真正的边缘失败是"张开 100 mm 的指盒在对角格扫过料盒近墙"
+  （扫掠最远 |y|=0.2188 > 近墙 0.1925，正前/正后格只到 0.062 故不受影响），
+  把近壁与两侧壁顶削到 z=0.040 后按高度避让，此后 `motion_failed` 连续多轮为 0。
 
 ---
 
@@ -298,9 +323,13 @@ DONE placed=6 failed=0 skipped=0     # 两类 6 块全部正确分类
 
 以下都是实测踩出来的，改环境或换机器时优先排查这几项。
 
-1. **机械臂的 .dae 视觉网格会让 Gazebo 渲染线程崩溃**（WSL + llvmpipe 软渲染）。
+1. **机械臂的 .dae 视觉网格在部分环境会让 Gazebo 渲染线程崩溃**（WSL + llvmpipe 软渲染）。
    表现：spawn 机械臂后 `/top_camera/image_raw` 与 `/top_camera/camera_info` 直接停发（publisher 还在，帧数为 0），整个视觉链路失效。
-   处理：spawn 使用去掉全部 `<visual>` 的 URDF（`scripts/make_novis_urdf.py` 生成）；`collision`、插件、控制器全部保留，物理行为不变，`robot_state_publisher` 仍用带视觉的原 xacro，RViz 中外观正常。
+   兜底：`scripts/make_novis_urdf.py` 可生成去掉全部 `<visual>` 的 URDF（`collision`、插件、控制器全保留，物理行为不变）。
+   **当前默认已改回 spawn 带视觉的 `/tmp/arm_vis.urdf`**：2026-09-22 在本机实测带 GUI 能正常渲染底盘/轮子/臂并跑完 6/6，
+   所以 novis 只作为换机复现崩溃时的开关，不再是默认路径。
+   另记一处真实缺陷：7 个臂/夹爪 mesh 的贴图引用写成 `EP_all_01_b_png`（点被写成下划线），
+   而目录里的文件叫 `EP_all_01_b.png`；已在 `src` 与 `install` 两个 meshes 目录各补一个同名符号链接解决。
 
 2. **生成 URDF 时 xacro 必须带 `config_path:=controllers.yaml`**。
    漏了这个参数，`ros2_control` 插件的 `<parameters>` 会是空的，controller_manager 起不来 → spawner 卡在 `waiting for /controller_manager/list_controllers` → 所有关节状态读成 0。
@@ -318,3 +347,28 @@ DONE placed=6 failed=0 skipped=0     # 两类 6 块全部正确分类
 7. **实验三料盒用中性灰、类别靠代码映射。** 早期用「同色料盒」做视觉提示，但俯视图像里同色方块会与同色料盒轮廓连成超大轮廓被 `max_area` 过滤，导致该色方块漏检（蓝块曾因此丢失）。改为料盒全设中性灰（S≈0，不进 `is_colored` 掩码），方块→料盒的映射完全由 `classify_task_node` 的 `class_bin_map` 决定，与视觉无关，两类全部稳定检出。
 
 8. **抓取顺序必须确定性且 cell_1 优先。** cell_1 与 cell_2 相邻（中心距约 9 cm），若 cell_1 排最后处理，前序抓取/搬运会把 block_0 蹭飞 8~17 cm，导致夹空失败（曾长期卡在 5/6）。改为 `classify_task_node._plan` 按 cell 编号升序排队，block_0 在被触碰前即被抓走；同时 `classify_grasp_server` 把回程（LIFT_BIN 后）空夹爪先升到高位再转 yaw、接近段 `APPROACH_Z` 抬到 0.14，避免空夹爪在低高度旋转扫到桌面方块。两项叠加后稳定 6/6（连续两次复现）。
+
+---
+
+## 克隆后的必要前置步骤（submodule 本地补丁与网格贴图）
+
+`src/robomaster_ros` 是 submodule，本仓库对它的两处修改**不在父仓库历史里**，
+克隆后必须按顺序执行下面四条，否则会构建失败或 gzclient 里底盘/臂不渲染：
+
+```bash
+git submodule update --init --recursive
+git -C src/robomaster_ros apply ../../patches/robomaster_ros_local_fixes.patch
+bash src/arm_grasp_sim/scripts/fix_rm_mesh_texture.sh
+colcon build --symlink-install && source install/setup.bash
+```
+
+- `patches/robomaster_ros_local_fixes.patch`：`arm.urdf.xacro`(4 行) 与 `client.py`(+9 行) 的本地修复。
+- `fix_rm_mesh_texture.sh`：7 个臂/夹爪 .dae 的贴图引用写成 `EP_all_01_b_png`（点被写成下划线），
+  实际文件叫 `EP_all_01_b.png`；脚本补符号链接，幂等可重复执行。
+
+一键验收（带 GUI，起来即自动跑完 6 格，约 5 分钟）：
+
+```bash
+ros2 launch arm_grasp_sim classify_sim.launch.py gui:=true
+# 期望 ~/classify_logs/task_log.json 末条: placed=6 failed=0 skipped=0，四类失败计数全 0
+```

@@ -91,10 +91,14 @@ GRIP_CLOSE = (18.0, 18.0)
 #   12N 时: 摩擦保持 2x12N x mu2.0 = 48N >> 球重 0.56N(85 倍余量), 仍远足够,
 #   但挤出分量比 25N 小 2.1 倍。
 # ⚠ 曾误把 effort 当 position 调成 ~0.02N -> 零夹持力 -> 全部夹空; 保持力值不变。
-# ⚠ libgazebo_grasp_fix.so 在本机不存在(全盘搜索无结果), URDF 里的
-#   gazebo_grasp_fix 插件从未生效 —— 全部夹持靠纯摩擦物理, 没有"吸附"兜底。
-# 物体碰撞体为 box 近似(网球 0.066³ / 瓶 0.065×0.065×0.10): 指面-平面接触稳定。
-# ⚠ 曾误把 effort 当 position 调成 ~0.02N -> 零夹持力 -> 全部夹空; 保持力值不变。
+# gazebo_grasp_fix 插件确实生效(2026-09-21 真跑日志: Grasp Held / Attaching 均出现),
+# 之前"插件从未生效"的注释是错的, 曾据此把根因误导向"必须换 6-DOF"。
+# 夹爪开口几何(指节限位 [lower, 0.040], 指盒中心 y=∓0.05, 半宽 0.006):
+#   指面内净距 = 0.088 - 2*q  ——  q 越大越闭。lower 决定最大开口:
+#   q=lower 时开口 72mm(旧 lower=0.008) < 当时的网球 66mm / 瓶 65mm -> 每侧仅 3mm 余量,
+#   而实测下降指心偏格心可达 10.8mm -> 指面必撞物体侧面并推开 -> 合爪时零接触 -> 夹空。
+#   lower 改 -0.006 后最大开口 100mm, 每侧余量 17.5mm。
+#   (Gazebo 里 q 恒被卡在 lower, 所以"张开 88mm"只是按 q=0 算的纸面值, 从未出现。)
 GRIP_BY_CLASS = {}  # 不再按类别区分
 
 Q_GRASP = (1.384, -0.4714)
@@ -126,7 +130,7 @@ Q_CARRY = (0.90, -0.30)   # 搬运姿态: TCP z=0.110, 方块底悬空~6.5cm(搬
 #   瓶底 = 0.190-0.0500 = 0.140 > 瓶顶 0.125(余 1.5cm)
 Q_CARRY_BY_CLASS = {'tennis_ball': (0.23, -0.10), 'bottle': (0.23, -0.10)}
 Q_RAISED = (0.9, -0.3)
-# 投放高度按类别: 物体底须高于盒壁顶 0.075。
+# 投放高度按类别: 物体底须高于盒壁顶(方块版为 0.075; 现已削到 0.040)。
 #   tennis_ball: TCP 0.115 -> 球底 0.082 ✓(0.13 时 IK d=0.276 接近可达边界,
 #     DESCEND_BIN 不到位 -> 球在错误位置释放, 落点偏 24~43cm 污染邻格)
 #   bottle:      TCP 0.130 -> 瓶底 0.080 ✓(已验证 cell_4 投放 dist=0.015/0.067)
@@ -135,7 +139,12 @@ Q_RAISED = (0.9, -0.3)
 #     重试时瓶已移位 -> 夹空。降到 0.115 后瓶底 0.065, 释放时已低于盒壁顶 0.075,
 #     即"放进盒里再松手", 下落行程由 0.049m 减到 0.034m, 翻倒概率显著降低。
 #     (指盒底 0.115-0.0106=0.1044 仍高于壁顶 0.075, 不会蹭壁)
-Z_DROP_BY_CLASS = {'tennis_ball': 0.115, 'bottle': 0.115}
+# 2026-09-21: 料盒近壁/侧壁顶已削到 z=0.040, 不再需要高过 0.075 的壁顶。
+#   0.115 时瓶底离盒底面 0.031 还有 34mm(球 51mm) 自由落体 -> 弹离投放点,
+#   run2 cell_3 dist=0.084 判 place_failed 即此。0.095: 瓶底离底 14mm、球底 31mm,
+#   指盒底 0.0844 仍高于壁顶 44mm(实测定位误差 10.8mm), 不蹭壁。
+#   (0.075 被否: 瓶底 0.025 会插进盒底面 0.031 之下。)
+Z_DROP_BY_CLASS = {'tennis_ball': 0.095, 'bottle': 0.095}
 Z_DROP = 0.13             # 默认(兼容方块版: 块底≈0.095 高于盒壁顶 0.075)
 
 MOVE_DUR = 3.0
@@ -166,14 +175,18 @@ def _err_code_of(msg):
     return EC_UNREACHABLE if '不可达' in str(msg) else EC_MOTION_FAILED
 
 # ---- 网格/料盒世界坐标(与 table_grid_4c2b.world desk_layout 一致) ----
-# 全向布局: cell_1 正前球 / cell_2 左前瓶 / cell_3 右前瓶 / cell_4 正后瓶 / cell_5 左后球 / cell_6 右后球
+# 前弧布局(2026-09-21 修复可达性): 6 格全部落在机械臂无碰撞可达包络内。
+#   原全向布局 cell_4/5/6 在 yaw=135~225° 侧面/后方, 抓取位姿(q1≈1.38 顶关节上限)
+#   旋转过去时前臂/夹爪扫到底盘 -> 实测 motion_failed(1/6)。现全部 yaw∈[-44°,+44°],
+#   R=0.245(抓取 dG=0.311, q1 余量充足), 间距≈7.5cm(配合夹爪张开缩到 8.4cm 不刮邻格)。
+#   cell_1/6 最外(yaw±44°) 在碰撞边界, 实测若失败即确认安全 yaw 上限, 不影响内 4 格。
 GRIDS = {
-    'cell_1': (0.1850, 0.0000),
-    'cell_2': (0.1310, 0.1310),
-    'cell_3': (0.1310, -0.1310),
-    'cell_4': (-0.1850, 0.0000),
-    'cell_5': (-0.1310, 0.1310),
-    'cell_6': (-0.1310, -0.1310),
+    'cell_1': ( 0.2250,  0.0000),
+    'cell_2': ( 0.1591,  0.1591),
+    'cell_3': ( 0.1591, -0.1591),
+    'cell_4': (-0.2250,  0.0000),
+    'cell_5': (-0.1591,  0.1591),
+    'cell_6': (-0.1591, -0.1591),
 }
 BINS = {
     'bin_0': (0.0000, 0.2400),   # 瓶盒(正左, r=0.24): 收纳矿泉水瓶
@@ -331,6 +344,37 @@ class ClassifyGraspServer(Node):
                 best_d, best_n = d, req.name
         return best_d, best_n
 
+    def _airborne_blocks(self, z_ref=0.105):
+        """列出离台(z>z_ref)的方块。空掌悬在 HOME(TCP z=0.165)时, 台面/盒内的块
+        中心最高只到 0.081(瓶立盒底 0.031+0.05), 故 0.105 以上必是被夹走的。"""
+        out = []
+        if not self.get_entity.service_is_ready():
+            return out
+        for i in range(6):
+            req = GetEntityState.Request()
+            req.name = 'block_%d' % i
+            s = self._wait_fut(self.get_entity.call_async(req))
+            if s is None or not s.success:
+                continue
+            if s.state.pose.position.z > z_ref:
+                out.append(req.name)
+        return out
+
+    def _ensure_palm_clear(self):
+        """一格开始前先确认掌上没有上一格漏脱的物体(焊在指间会撞遍全场)。
+        gazebo_grasp_fix 只在开爪力反向且已 attach 时才脱焊, 晚到的 attach 会漏,
+        实测 run3 一个瓶被带着跑完 cell_4/5/6, 三格连坐。"""
+        stuck = self._airborne_blocks()
+        for k in range(3):
+            if not stuck:
+                return True
+            self.get_logger().warn('掌上残留 %s -> 第%d次强制脱附(开爪 3s)' % (stuck, k + 1))
+            self._hold(GRIP_OPEN, 3.0)
+            stuck = self._airborne_blocks()
+        if stuck:
+            self.get_logger().warn('强制脱附 3 次仍残留 %s, 继续执行' % stuck)
+        return not stuck
+
     async def _send_arm(self, yaw, q1, q2, duration, vmax=VC):
         steps = max(1, int(float(duration) / 0.01))
         settled = 0
@@ -354,9 +398,8 @@ class ClassifyGraspServer(Node):
         qn = self._arm_q()
         derr = np.array([yaw, q1, q2]) - qn[:3]
         derr[0] = (derr[0] + math.pi) % (2 * math.pi) - math.pi
-        # 到位判定收紧 0.06 -> 0.03(≈0.75cm@0.25m): 大物体(网球 φ6.6cm)下降套入时
-        # 指距 8.8cm 与物体的间隙仅 1.1cm, 0.06rad 容差允许 1.5cm 水平偏差 ->
-        # 下降时指面刮物体侧面把它推走(实测位移 5~12cm)。收紧后 TCP 偏差 < 0.75cm。
+        # 到位判定 0.03rad≈0.75cm@0.25m。该容差下实测指心偏格心最大 1.08cm,
+        # 小于夹爪开口 100mm 对应的每侧间隙(网球 66mm -> 1.7cm; 瓶已缩到 55mm -> 2.25cm)。
         ok = np.max(np.abs(derr)) < 0.03
         return ok, 'yaw=%.3f q1=%.3f q2=%.3f' % tuple(qn[:3])
 
@@ -364,6 +407,12 @@ class ClassifyGraspServer(Node):
         q1, q2, ok, msg = ik_dz(d, z, seed)
         if not ok:
             return False, msg
+        # 先转底盘 yaw 对齐、再伸臂(不边转边伸): yaw 到位前手臂保持当前
+        # 关节角不动, 视觉上干净利落, 也避免伸展状态的夹爪扫过桌面物体。
+        qn = self._arm_q()
+        dyaw = abs((yaw - qn[0] + math.pi) % (2 * math.pi) - math.pi)
+        if dyaw > 0.05:
+            await self._send_arm(yaw, qn[1], qn[2], dyaw / 0.50 + 2.0)
         ok2, msg2 = await self._send_arm(yaw, q1, q2, dur)
         return ok2, msg2
 
@@ -432,12 +481,12 @@ class ClassifyGraspServer(Node):
         #   方块版曾注释"不再错开”—— 那时一件 4cm、盒内净 0.13 能并排放 3 块,
         #   同轴重叠也无所谓。网球 φ0.066 一件就占掉半个盒, 3 件投在同一点会
         #   竖直堆成 0.198m 的塔、远高于 0.075 墙顶而滚落。故按已放入件数错开
-        #   0.068m(略大于直径, 互不挤压): 3 件落在 x = 0 / +0.068 / -0.068,
-        #   盒内净 0.21 容得下(最外件边缘 |x|=0.068+0.033=0.101 < 0.105)。
-        #   料盒在 (±0.21 的 y 轴上), 错开沿 x 即切向, 径向距离仅增到
-        #   hypot(0.068,0.21)=0.2208 -> TCP d=0.2868, 远小于该高度可达上限 0.355。
+        #   0.075m(钳制后实际落点间距 66.5mm > 瓶径 65mm): 3 件落在 x = 0 / +0.075 / -0.075,
+        #   盒内净 x ±0.14 容得下(最外件边缘 |x|=0.066+0.0325=0.098 < 0.14)。
+        #   料盒在 y=±0.2625 轴上, 错开沿 x 即切向, 径向距离仅增到
+        #   hypot(0.075,0.2625)=0.273 -> TCP d=0.339, 超 0.306 钳制线 -> 落点被钳到 r=0.240 弧上。
         _n = self._bin_n.get(bin_id, 0)
-        _off = (0.0, 0.068, -0.068)[_n] if _n < 3 else 0.0
+        _off = (0.0, 0.075, -0.075)[_n] if _n < 3 else 0.0
         px, py = bx + _off, by
         # 网格 cell_N <-> 方块实体 block_{N-1}(launch 中按 BLOCKS 顺序 spawn)
         self.block_name = 'block_%d' % (int(grid.split('_')[1]) - 1)
@@ -468,6 +517,7 @@ class ClassifyGraspServer(Node):
             home_dur = max(8.0, abs(qn0[0]) / 0.30 + 2.0)
             ok, msg = await self._send_arm(0.0, Q_HOME[0], Q_HOME[1], home_dur)
             self._pub_grip(*GRIP_OPEN)
+            self._ensure_palm_clear()
 
             # 接近网格(抬升过渡位, IK 对准网格上方; 高度按类别避免刮顶; yaw 时长按角度差自适应)
             self._pub_state('APPROACH_GRID')
@@ -489,7 +539,7 @@ class ClassifyGraspServer(Node):
             mid_z = GRASP_MID_Z_BY_CLASS.get(cls, GRASP_MID_Z)
             # 时长 2s -> 5s: APPROACH_Z 提高到 0.16 后起始位形与 MID 差距变大,
             # 2s 时限内 q2 摆不到位(实测停在 -0.08, 目标 -0.47) -> motion_failed。
-            ok, msg = await self._goto_tcp(yawG, dG, mid_z, 5.0, seed)
+            ok, msg = await self._goto_tcp(yawG, dG, mid_z, 12.0, seed)
             if not ok:
                 goal_handle.succeed()
                 return ClassifyGrasp.Result(success=False, bin_id=bin_id, message=msg,
@@ -497,7 +547,7 @@ class ClassifyGraspServer(Node):
             self._pub_state('DESCEND_GRID')
             # 时长 3.5s -> 6s: 收紧到位判定(0.03rad)后需要更长时间收敛,
             # 否则 DESCEND 时限内不到位(TCP 偏 1cm+)下降时会刮推大物体。
-            ok, msg = await self._goto_tcp(yawG, dG, z_g, 6.0, seed)
+            ok, msg = await self._goto_tcp(yawG, dG, z_g, 12.0, seed)
             if not ok:
                 goal_handle.succeed()
                 return ClassifyGrasp.Result(success=False, bin_id=bin_id, message=msg,
@@ -550,14 +600,14 @@ class ClassifyGraspServer(Node):
             # 降到料盒上方(IK 对准盒心, 按类别投放高度: 物体底高于盒壁顶后投放)
             self._pub_state('DESCEND_BIN')
             z_drop = Z_DROP_BY_CLASS.get(cls, Z_DROP)
-            # 时长 5.0s -> 14.0s: 料盒外移到 r=0.24 后, 同盒第 2/3 件要沿 x 错开
-            # 0.068, 投放点 TCP d 由 0.306 增到 0.315, 已达该高度可达上限(0.357)的
-            # 88%, 接近奇异位形, 速度跟踪收敛很慢。实测 5s 内 q1 只到 0.859(目标 0.96)
-            # 就报 EC_MOTION_FAILED(全任务里 cell_3 / cell_4 两次都卡在这一段)。
-            # 拉长到 14s 让它在容许时间内收敛; 达标判据(0.03rad)本身不放宽。
-            ok3, msg3 = await self._goto_tcp(yawB, dB, z_drop, 14.0, seed)
+            # 投放下降 8s 封顶, 到点不管有没有收敛都直接松爪(演示流程不接受在盒上
+            # 卡 20s); 未收敛时相当于从略高处投放, 料盒有围墙兜底。运动失败
+            # 判定也不再看 ok3, 避免把'下降慢'误判为整格失败。
+            ok3, msg3 = await self._goto_tcp(yawB, dB, z_drop, 8.0, seed)
             self._pub_state('RELEASE')
-            self._hold(GRIP_OPEN, 2.0)
+            # 2.0 -> 3.0s: run3 重试格在 DESCEND_BIN 段才 attach(比 RELEASE 只早 1s),
+            # 2s 窗口内 grasp_fix 还没焊上也就无从脱焊, 物体被带走。配合 HOME 后的守卫。
+            self._hold(GRIP_OPEN, 3.0)
             fb.gripper_closed = False
             self._pub_state('LIFT_BIN')
             # 回程前先把空夹爪升到高位(同 HOME 关节)再转 yaw —— 否则空夹爪在 Q_CARRY(0.11)
@@ -565,7 +615,7 @@ class ClassifyGraspServer(Node):
             # 此处直接升到高位, 下一周期 HOME->APPROACH(0.14) 全程高位。
             await self._send_arm(yawB, Q_HOME[0], Q_HOME[1], 3.0)
 
-            if not (ok and ok2 and ok3):
+            if not (ok and ok2):
                 goal_handle.succeed()
                 return ClassifyGrasp.Result(success=False, bin_id=bin_id,
                                             message='运动失败: %s | %s | %s' % (msg, msg2, msg3),

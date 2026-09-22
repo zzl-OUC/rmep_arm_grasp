@@ -1,0 +1,42 @@
+diff --git a/robomaster_description/urdf/arm.urdf.xacro b/robomaster_description/urdf/arm.urdf.xacro
+index 3c6b437..aa40c29 100644
+--- a/robomaster_description/urdf/arm.urdf.xacro
++++ b/robomaster_description/urdf/arm.urdf.xacro
+@@ -279,7 +279,7 @@
+       <parent link="${tf_prefix}arm_base_link"/>
+       <child link="${tf_prefix}arm_1_link"/>
+       <axis xyz="0.0 1.0 0"/>
+-      <limit effort="0" velocity="0" lower="-0.274" upper="1.384"/>
++      <limit effort="20" velocity="3.14" lower="-0.274" upper="1.384"/>
+     </joint>
+ 
+     <!-- <joint name="arm_2_dummy" type="floating">
+@@ -293,7 +293,7 @@
+       <parent link="${tf_prefix}arm_1_link"/>
+       <child link="${tf_prefix}arm_2_link"/>
+       <axis xyz="0.0 1.0 0"/>
+-      <limit effort="0" velocity="0"/>
++      <limit effort="20" velocity="3.14"/>
+       <mimic joint="${tf_prefix}rod_3_joint" multiplier="-1.0" offset="0.0"/>
+     </joint>
+ 
+diff --git a/robomaster_ros/robomaster_ros/client.py b/robomaster_ros/robomaster_ros/client.py
+index 8c2fe73..3df9e98 100644
+--- a/robomaster_ros/robomaster_ros/client.py
++++ b/robomaster_ros/robomaster_ros/client.py
+@@ -96,6 +96,15 @@ class RoboMasterROS(rclpy.node.Node):  # type: ignore
+         lib_log_level : str = self.declare_parameter("lib_log_level", "ERROR").value.upper()
+         robomaster.logger.setLevel(lib_log_level)
+         conn_type: str = self.declare_parameter("conn_type", "sta").value[:]
++        # 规范 conn_type 为 SDK 驻留常量, 避免 camera._stream_sdk 用 is 比较时
++        # 因 ROS 参数运行时字符串未驻留而误判 'not supported' (AP/STA/RNDIS 视频均受影响)
++        _conn_const = {
++            'ap': robomaster.conn.CONNECTION_WIFI_AP,
++            'sta': robomaster.conn.CONNECTION_WIFI_STA,
++            'rndis': robomaster.conn.CONNECTION_USB_RNDIS,
++        }
++        if conn_type in _conn_const:
++            conn_type = _conn_const[conn_type]
+         self.reconnect: bool = self.declare_parameter("reconnect", True).value
+         sn: Optional[str] = self.declare_parameter("serial_number", "").value
+         if sn:

@@ -1,0 +1,67 @@
+[
+  {
+    "grid": "cell_5",
+    "cls": null,
+    "result": "skipped_empty",
+    "reason": "空网格"
+  },
+  {
+    "grid": "cell_6",
+    "cls": null,
+    "result": "skipped_empty",
+    "reason": "空网格"
+  },
+  {
+    "grid": "cell_1",
+    "cls": "tennis_ball",
+    "bin": "bin_1",
+    "result": "placed",
+    "message": "dist=0.061"
+  },
+  {
+    "grid": "cell_2",
+    "cls": "bottle",
+    "bin": "bin_0",
+    "result": "placed",
+    "message": "dist=0.007"
+  },
+  {
+    "grid": "cell_3",
+    "cls": "bottle",
+    "bin": "bin_0",
+    "result": "placed",
+    "message": "dist=0.008"
+  },
+  {
+    "grid": "cell_4",
+    "cls": "bottle",
+    "result": "retry",
+    "error_code": 6,
+    "reason": "dist=0.142"
+  },
+  {
+    "grid": "cell_4",
+    "cls": "bottle",
+    "result": "grasp_failed",
+    "error_code": 2,
+    "reason": "夹空: 抬升后方块 z=0.060 仍在台面"
+  },
+  {
+    "grid": null,
+    "cls": null,
+    "result": "summary",
+    "placed": 3,
+    "failed": 1,
+    "skipped": 2,
+    "counts": {
+      "placed": 3,
+      "unreachable": 0,
+      "grasp_failed": 1,
+      "motion_failed": 0,
+      "place_failed": 0,
+      "failed": 0,
+      "skipped_empty": 2,
+      "skipped_unknown": 0
+    }
+  }
+]

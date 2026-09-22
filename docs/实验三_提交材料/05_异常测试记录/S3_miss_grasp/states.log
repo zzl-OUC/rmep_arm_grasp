@@ -1,0 +1,36 @@
+[classify_task_node.py-14] [INFO] [1789776758.310736963] [classify_task_node]: [task] SCAN 开始扫描桌面
+[classify_task_node.py-14] [INFO] [1789776764.318712293] [classify_task_node]: [task] SCAN 计划: [('cell_1', 'tennis_ball'), ('cell_2', 'bottle')]
+[classify_task_node.py-14] [INFO] [1789776764.319076686] [classify_task_node]: [task] GRASP cell_1 tennis_ball -> bin_1 (retry=0)
+[classify_grasp_server.py-9] [INFO] [1789776764.325523846] [classify_grasp_server]: [state] SCAN_OK
+[classify_grasp_server.py-9] [INFO] [1789776764.327366118] [classify_grasp_server]: [state] HOME
+[classify_grasp_server.py-9] [INFO] [1789776773.467701218] [classify_grasp_server]: [state] APPROACH_GRID
+[classify_grasp_server.py-9] [INFO] [1789776776.876453251] [classify_grasp_server]: [state] DESCEND_MID
+[classify_grasp_server.py-9] [INFO] [1789776778.743560038] [classify_grasp_server]: [state] DESCEND_GRID
+[classify_grasp_server.py-9] [INFO] [1789776785.556085996] [classify_grasp_server]: [state] GRASP
+[classify_grasp_server.py-9] [INFO] [1789776790.209837152] [classify_grasp_server]: [state] LIFT
+[classify_grasp_server.py-9] [INFO] [1789776793.643998776] [classify_grasp_server]: [state] GRASP_MISSED
+[classify_grasp_server.py-9] [WARN] [1789776793.650034343] [classify_grasp_server]: 夹空 block_0: 抬升后物体 z=0.062 仍在台面, 中止本次
+[classify_task_node.py-14] [INFO] [1789776793.710550928] [classify_task_node]: [task] GRASP cell_1 tennis_ball -> bin_1 (retry=1)
+[classify_grasp_server.py-9] [INFO] [1789776793.715926145] [classify_grasp_server]: [state] SCAN_OK
+[classify_grasp_server.py-9] [INFO] [1789776793.716729899] [classify_grasp_server]: [state] HOME
+[classify_grasp_server.py-9] [INFO] [1789776802.792024238] [classify_grasp_server]: [state] APPROACH_GRID
+[classify_grasp_server.py-9] [INFO] [1789776806.188121306] [classify_grasp_server]: [state] DESCEND_MID
+[classify_grasp_server.py-9] [INFO] [1789776808.063125963] [classify_grasp_server]: [state] DESCEND_GRID
+[classify_grasp_server.py-9] [INFO] [1789776814.882426757] [classify_grasp_server]: [state] GRASP
+[classify_grasp_server.py-9] [INFO] [1789776819.496699520] [classify_grasp_server]: [state] LIFT
+[classify_grasp_server.py-9] [INFO] [1789776822.912461076] [classify_grasp_server]: [state] GRASP_MISSED
+[classify_grasp_server.py-9] [WARN] [1789776822.912791025] [classify_grasp_server]: 夹空 block_0: 抬升后物体 z=0.062 仍在台面, 中止本次
+[classify_task_node.py-14] [INFO] [1789776823.110735615] [classify_task_node]: [task] GRASP cell_2 bottle -> bin_0 (retry=0)
+[classify_grasp_server.py-9] [INFO] [1789776823.117265478] [classify_grasp_server]: [state] SCAN_OK
+[classify_grasp_server.py-9] [INFO] [1789776823.118070167] [classify_grasp_server]: [state] HOME
+[classify_grasp_server.py-9] [INFO] [1789776832.146439367] [classify_grasp_server]: [state] APPROACH_GRID
+[classify_grasp_server.py-9] [INFO] [1789776837.260390669] [classify_grasp_server]: [state] DESCEND_MID
+[classify_grasp_server.py-9] [INFO] [1789776839.662461414] [classify_grasp_server]: [state] DESCEND_GRID
+[classify_grasp_server.py-9] [INFO] [1789776846.445118361] [classify_grasp_server]: [state] GRASP
+[classify_grasp_server.py-9] [INFO] [1789776851.090952474] [classify_grasp_server]: [state] LIFT
+[classify_grasp_server.py-9] [INFO] [1789776854.540390591] [classify_grasp_server]: [state] TRANSPORT
+[classify_grasp_server.py-9] [INFO] [1789776870.319603099] [classify_grasp_server]: [state] DESCEND_BIN
+[classify_grasp_server.py-9] [INFO] [1789776885.995621860] [classify_grasp_server]: [state] RELEASE
+[classify_grasp_server.py-9] [INFO] [1789776888.060013729] [classify_grasp_server]: [state] LIFT_BIN
+[classify_grasp_server.py-9] [INFO] [1789776891.594125494] [classify_grasp_server]: [state] CYCLE_DONE
+[classify_task_node.py-14] [INFO] [1789776891.711167121] [classify_task_node]: [task] DONE placed=1 failed=1 skipped=4 (empty+unknown)

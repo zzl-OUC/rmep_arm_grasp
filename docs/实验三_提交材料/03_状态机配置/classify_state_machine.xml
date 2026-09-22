@@ -1,0 +1,105 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  实验三 状态机配置文件
+  ============================================================================
+  性质说明（务必先读）：这是**声明式状态机配置**，逐条对应运行时实现
+    - 任务层：arm_grasp_sim/scripts/classify_task_node.py
+    - 动作层：arm_grasp_sim/scripts/classify_grasp_server.py
+  运行时**不解析本文件**（工程未引入 BehaviorTree.CPP 依赖，状态机为手写）。
+  本文件的作用是：把状态、跳转条件、守卫阈值、错误码与重试策略集中成可核对的配置，
+  并作为提交要求"BehaviorTree XML 或状态机配置文件"的交付物。
+  改这里不会改行为；改行为请改上面两个脚本，并同步本文件。
+  ============================================================================
+-->
+<state_machine name="exp3_classify" version="2026-09-22"
+               implementation="handwritten-fsm" not_runtime_loaded="true">
+
+  <!-- ===================== 任务层（规划与调度） ===================== -->
+  <task_layer implementation_file="scripts/classify_task_node.py">
+    <states>
+      <state id="IDLE"  initial="true"  desc="启动等待"/>
+      <state id="SCAN"  desc="订阅 /grid_detections 累积窗口内观测，生成待处理队列"/>
+      <state id="GRASP" desc="逐个下发 ClassifyGrasp 目标，异步等结果"/>
+      <state id="DONE"  desc="全部格处理完，写 summary"/>
+    </states>
+
+    <transitions>
+      <transition from="IDLE"  to="SCAN"  trigger="启动后 1.0 s 定时器"/>
+      <transition from="SCAN"  to="GRASP" trigger="稳定窗口满足 或 scan_timeout 到期，_plan() 出队"/>
+      <transition from="GRASP" to="GRASP" trigger="本格结束且队列非空 -> 下发下一格"/>
+      <transition from="GRASP" to="DONE"  trigger="队列空"/>
+      <transition from="SCAN"  to="DONE"  trigger="桌面持续空超过 scan_max_wait"/>
+    </transitions>
+
+    <parameters>
+      <param name="min_score"      value="0.5"   desc="低于此置信度判 skipped_unknown"/>
+      <param name="scan_timeout"   value="8.0"   desc="单轮扫描窗口上限(s)"/>
+      <param name="scan_stable"    value="6.0"   desc="稳定窗口：窗口内不再出现新网格才定计划"/>
+      <param name="scan_reopen_cap" value="20.0" desc="新网格重开窗口的总封顶(s)"/>
+      <param name="scan_max_wait"  value="300.0" desc="桌面持续空的总容忍时长(s)"/>
+      <param name="class_bin_map"  value='{"tennis_ball":"bin_1","bottle":"bin_0"}'/>
+    </parameters>
+
+    <!-- 2026-09-22 修掉的竞态：稳定窗口原从"进入 SCAN"起算、只在桌面全空时重置，
+         首批检测一到就定计划；6 路并行 spawn 里最晚的物体会被整轮记成"空网格"。
+         现改为"本轮首次出现的新网格"重开窗口（只认新网格，避免视觉抖动无限推后）。 -->
+    <notes>SCAN 与物体异步 spawn 的竞态已由 scan_reopen_cap 消除（实测曾致 4/6）。</notes>
+  </task_layer>
+
+  <!-- ===================== 动作层（单格抓取-搬运-放置） ===================== -->
+  <action_layer implementation_file="scripts/classify_grasp_server.py"
+                action_name="classify_grasp" action_type="arm_grasp_interfaces/ClassifyGrasp">
+    <states order="sequence">
+      <state id="SCAN_OK"       desc="本格目标已受理，回状态给任务层"/>
+      <state id="HOME"          desc="抬回待机位形 Q_HOME=(0.11,0.35)，yaw 归 0"/>
+      <state id="APPROACH_GRID" desc="IK 对准格心上方 APPROACH_Z（按类别）"/>
+      <state id="DESCEND_MID"   desc="两段式下降之中转航点 GRASP_MID_Z，避开 q1 奇异位形"/>
+      <state id="DESCEND_GRID"  desc="降到抓取高度 z_g"/>
+      <state id="GRASP"         desc="GRIP_SEAT 5N 预夹 3.0 s -> GRIP_CLOSE 18N 夹紧 1.5 s"/>
+      <state id="LIFT"          desc="抬到 APPROACH_Z，并在此做夹空判定"/>
+      <state id="GRASP_MISSED"  desc="夹空分支：开爪中止，不再搬运（避免空夹爪扫邻格）"/>
+      <state id="TRANSPORT"     desc="两步：原位提升到搬运位形 -> 再转 yaw 到料盒方向（限速 VC_CARRY）"/>
+      <state id="DESCEND_BIN"   desc="IK 对准盒心上方 Z_DROP（同盒多件沿 x 错开，d 钳到 DB_MAX）"/>
+      <state id="RELEASE"       desc="开爪 3.0 s"/>
+      <state id="LIFT_BIN"      desc="空夹爪升回 HOME 位形"/>
+      <state id="CYCLE_DONE"    desc="落点判定并返回结果"/>
+    </states>
+
+    <guards>
+      <guard name="到位判定"      expr="max(|yaw_err|,|q1_err|,|q2_err|) < 0.03 rad"/>
+      <guard name="夹空判定"      expr="抬升后物体 z &lt; z_ref"  z_ref_tennis_ball="0.068" z_ref_bottle="0.085"/>
+      <guard name="放置判定"      expr="0 &lt;= 落点距投放点 &lt; 0.07 m"/>
+      <guard name="掌上残留守卫"  expr="每格 HOME 后扫描 block_0..5，任一 z &gt; 0.105 即判为上一格漏脱焊 -&gt; 强制开爪 3 s，最多 3 次"/>
+      <guard name="投放半径钳制"  expr="dB = min(hypot(px,py)+TCP_LEAD, DB_MAX=0.306)"/>
+    </guards>
+
+    <motion_constants>
+      <param name="TCP_LEAD / GRASP_LEAD" value="0.066"/>
+      <param name="Q1_LIM" value="[-0.274, 1.384]"/>
+      <param name="Q2_LIM" value="[-1.25, 0.40]"/>
+      <param name="KV / VC / VC_CARRY" value="4.0 / 0.9 / 0.45"/>
+      <param name="APPROACH_Z_BY_CLASS"  value="{tennis_ball:0.14, bottle:0.16}"/>
+      <param name="GRASP_MID_Z_BY_CLASS" value="{tennis_ball:0.065, bottle:0.075}"/>
+      <param name="Z_G_BY_CLASS"         value="{tennis_ball:0.053, bottle:0.070}"/>
+      <param name="Z_DROP_BY_CLASS"      value="{tennis_ball:0.095, bottle:0.095}  # 9/22 由 0.115 降下：壁顶已削到 0.040，高抛会使物体弹出矮壁盒"/>
+    </motion_constants>
+  </action_layer>
+
+  <!-- ===================== 错误码与重试策略 ===================== -->
+  <error_codes>
+    <code value="0" name="EC_NONE"          result="placed"/>
+    <code value="1" name="EC_UNREACHABLE"   result="unreachable"    retry="no"/>
+    <code value="2" name="EC_GRASP_MISSED"  result="grasp_failed"   retry="yes"/>
+    <code value="3" name="EC_MOTION_FAILED" result="motion_failed"  retry="yes"/>
+    <code value="4" name="EC_UNKNOWN_TARGET" result="skipped_unknown" retry="no"/>
+    <code value="5" name="EC_INTERNAL"      result="failed"         retry="no"/>
+    <code value="6" name="EC_PLACE_FAILED"  result="place_failed"   retry="yes"/>
+  </error_codes>
+
+  <skip_rules>
+    <rule name="skipped_empty"   desc="本轮快照里完全没出现过的网格"/>
+    <rule name="skipped_unknown" desc="检出但类别不可用（无类别 / 低置信度 / 无网格）；同一格不重复计两条"/>
+  </skip_rules>
+
+  <retry_policy max_retry="1" desc="每格失败重试 1 次；不可达类不重试"/>
+</state_machine>

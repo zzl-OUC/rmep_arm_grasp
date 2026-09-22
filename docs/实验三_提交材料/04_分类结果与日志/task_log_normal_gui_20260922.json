@@ -1,0 +1,62 @@
+[
+  {
+    "grid": "cell_1",
+    "cls": "tennis_ball",
+    "bin": "bin_1",
+    "result": "placed",
+    "message": "dist=0.001"
+  },
+  {
+    "grid": "cell_2",
+    "cls": "bottle",
+    "bin": "bin_0",
+    "result": "placed",
+    "message": "dist=0.001"
+  },
+  {
+    "grid": "cell_3",
+    "cls": "bottle",
+    "bin": "bin_0",
+    "result": "placed",
+    "message": "dist=0.012"
+  },
+  {
+    "grid": "cell_4",
+    "cls": "bottle",
+    "bin": "bin_0",
+    "result": "placed",
+    "message": "dist=0.009"
+  },
+  {
+    "grid": "cell_5",
+    "cls": "tennis_ball",
+    "bin": "bin_1",
+    "result": "placed",
+    "message": "dist=0.011"
+  },
+  {
+    "grid": "cell_6",
+    "cls": "tennis_ball",
+    "bin": "bin_1",
+    "result": "placed",
+    "message": "dist=0.012"
+  },
+  {
+    "grid": null,
+    "cls": null,
+    "result": "summary",
+    "placed": 6,
+    "failed": 0,
+    "skipped": 0,
+    "counts": {
+      "placed": 6,
+      "unreachable": 0,
+      "grasp_failed": 0,
+      "motion_failed": 0,
+      "place_failed": 0,
+      "failed": 0,
+      "skipped_empty": 0,
+      "skipped_unknown": 0
+    }
+  }
+]

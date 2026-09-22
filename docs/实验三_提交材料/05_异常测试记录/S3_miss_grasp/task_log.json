@@ -1,0 +1,65 @@
+[
+  {
+    "grid": "cell_3",
+    "cls": null,
+    "result": "skipped_empty",
+    "reason": "空网格"
+  },
+  {
+    "grid": "cell_4",
+    "cls": null,
+    "result": "skipped_empty",
+    "reason": "空网格"
+  },
+  {
+    "grid": "cell_5",
+    "cls": null,
+    "result": "skipped_empty",
+    "reason": "空网格"
+  },
+  {
+    "grid": "cell_6",
+    "cls": null,
+    "result": "skipped_empty",
+    "reason": "空网格"
+  },
+  {
+    "grid": "cell_1",
+    "cls": "tennis_ball",
+    "result": "retry",
+    "error_code": 2,
+    "reason": "夹空: 抬升后方块 z=0.062 仍在台面"
+  },
+  {
+    "grid": "cell_1",
+    "cls": "tennis_ball",
+    "result": "grasp_failed",
+    "error_code": 2,
+    "reason": "夹空: 抬升后方块 z=0.062 仍在台面"
+  },
+  {
+    "grid": "cell_2",
+    "cls": "bottle",
+    "bin": "bin_0",
+    "result": "placed",
+    "message": "dist=0.014"
+  },
+  {
+    "grid": null,
+    "cls": null,
+    "result": "summary",
+    "placed": 1,
+    "failed": 1,
+    "skipped": 4,
+    "counts": {
+      "placed": 1,
+      "unreachable": 0,
+      "grasp_failed": 1,
+      "motion_failed": 0,
+      "place_failed": 0,
+      "failed": 0,
+      "skipped_empty": 4,
+      "skipped_unknown": 0
+    }
+  }
+]

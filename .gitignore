@@ -3,3 +3,19 @@ install/
 log/
 __pycache__/
 *.pyc
+
+# 编辑过程中留下的备份/临时件，不进仓库
+*.bak*
+*_bak
+*.orig
+*.rej
+
+# 大二进制：模型权重走 Git LFS 或 Release，不直接提交
+*.pt
+*.torchscript
+*.tar.gz
+
+# 运行产物
+*.mp4.tmp
+.DS_Store
+Thumbs.db

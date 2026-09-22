@@ -1,0 +1,4 @@
+S1_empty_grid    preset=empty_grid   z_grasp=0.0446  summary=yes 用时=320s  期望: 2 skipped_empty + 4 placed
+S2_unknown_obj   preset=unknown_obj  z_grasp=0.0446  summary=yes 用时=500s  期望: 1 skipped_unknown + 5 placed
+S3_miss_grasp    preset=miss_grasp   z_grasp=0.115   summary=yes 用时=171s  期望: 1 grasp_failed + 1 placed + 4 skipped_empty(该预设只放2件,任务不中断)
+S4_unreachable   preset=unreachable  z_grasp=0.005   summary=yes 用时=70s  期望: 2 unreachable(不重试)
